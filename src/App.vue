@@ -8,4 +8,5 @@
       Tailwind CSS is working! 🎉
     </h1>
   </div>
+  <Header></Header>
 </template>
