@@ -3,6 +3,7 @@ import { ref } from 'vue'
 
 import CategoryTree from './components/CategoryTree.vue'
 import Header from './components/Header.vue'
+import VendorProductForm from './components/VendorProductForm.vue'
 
 const selectedCategory = ref(null)
 </script>
@@ -26,12 +27,8 @@ const selectedCategory = ref(null)
           </div>
         </div>
 
-        <div class="grid gap-4 py-5 sm:grid-cols-2 xl:grid-cols-3">
-          <div
-            v-for="item in 6"
-            :key="item"
-            class="h-36 rounded-md border border-slate-200 bg-slate-50"
-          ></div>
+        <div class="py-5">
+          <VendorProductForm />
         </div>
       </section>
     </main>
