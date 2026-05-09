@@ -14,23 +14,26 @@ const props = defineProps({
 const emit = defineEmits(['view-product'])
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const defaultFilters = {
+  brand: '',
+  category: '',
+  minPrice: 0,
+  maxPrice: 3000,
+}
+const filterParamKeys = ['brand', 'category', 'min_price', 'max_price']
 const products = ref([])
 const facets = ref({
   brands: [],
   price_ranges: [],
 })
-const activeFilters = ref({
-  brand: '',
-  category: '',
-  minPrice: 0,
-  maxPrice: 3000,
-})
+const activeFilters = ref(readFiltersFromUrl())
 const nextPageUrl = ref(null)
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const errorMessage = ref('')
 const loadMoreMarker = ref(null)
 let observer = null
+let isApplyingUrlState = false
 
 const hasProducts = computed(() => products.value.length > 0)
 const pageTitle = computed(() => props.selectedCategory?.name || 'Product Catalog')
@@ -43,24 +46,97 @@ const pageSubtitle = computed(() => {
 })
 
 function productListUrl() {
-  const params = new URLSearchParams()
-
-  if (activeFilters.value.brand) {
-    params.set('brand', activeFilters.value.brand)
-  }
-  if (activeFilters.value.category) {
-    params.set('category', activeFilters.value.category)
-  }
-  if (Number(activeFilters.value.minPrice) > 0) {
-    params.set('min_price', activeFilters.value.minPrice)
-  }
-  if (Number(activeFilters.value.maxPrice) < 3000) {
-    params.set('max_price', activeFilters.value.maxPrice)
-  }
-
+  const params = filtersToSearchParams(activeFilters.value)
   const queryString = params.toString()
   const baseUrl = `${apiBaseUrl}/api/v1/catalog/products/search/`
   return queryString ? `${baseUrl}?${queryString}` : baseUrl
+}
+
+function filtersToSearchParams(filters) {
+  const params = new URLSearchParams()
+
+  if (filters.brand) {
+    params.set('brand', filters.brand)
+  }
+  if (filters.category) {
+    params.set('category', filters.category)
+  }
+  if (Number(filters.minPrice) > defaultFilters.minPrice) {
+    params.set('min_price', filters.minPrice)
+  }
+  if (Number(filters.maxPrice) < defaultFilters.maxPrice) {
+    params.set('max_price', filters.maxPrice)
+  }
+
+  return params
+}
+
+function normalizePrice(value, fallback) {
+  const numericValue = Number(value)
+
+  if (!Number.isFinite(numericValue)) {
+    return fallback
+  }
+
+  return Math.min(Math.max(numericValue, 0), defaultFilters.maxPrice)
+}
+
+function readFiltersFromUrl() {
+  if (typeof window === 'undefined') {
+    return { ...defaultFilters }
+  }
+
+  const params = new URLSearchParams(window.location.search)
+  const minPrice = normalizePrice(
+    params.get('min_price'),
+    defaultFilters.minPrice,
+  )
+  const maxPrice = normalizePrice(
+    params.get('max_price'),
+    defaultFilters.maxPrice,
+  )
+
+  return {
+    brand: params.get('brand') || defaultFilters.brand,
+    category: params.get('category') || defaultFilters.category,
+    minPrice: Math.min(minPrice, maxPrice),
+    maxPrice: Math.max(minPrice, maxPrice),
+  }
+}
+
+function syncFiltersToUrl(filters, replace = false) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const params = new URLSearchParams(window.location.search)
+  const filterParams = filtersToSearchParams(filters)
+
+  filterParamKeys.forEach((key) => {
+    params.delete(key)
+  })
+  filterParams.forEach((value, key) => {
+    params.set(key, value)
+  })
+
+  const queryString = params.toString()
+  const nextSearch = queryString ? `?${queryString}` : ''
+  const nextUrl = `${window.location.pathname}${nextSearch}${window.location.hash}`
+  const currentUrl = (
+    `${window.location.pathname}${window.location.search}${window.location.hash}`
+  )
+
+  if (nextUrl === currentUrl) {
+    return
+  }
+
+  const method = replace ? 'replaceState' : 'pushState'
+  window.history[method]({}, '', nextUrl)
+}
+
+function applyFiltersFromUrl() {
+  isApplyingUrlState = true
+  activeFilters.value = readFiltersFromUrl()
 }
 
 function resolveApiUrl(url) {
@@ -116,12 +192,7 @@ function loadFirstPage() {
 }
 
 function clearFilters() {
-  activeFilters.value = {
-    brand: '',
-    category: '',
-    minPrice: 0,
-    maxPrice: 3000,
-  }
+  activeFilters.value = { ...defaultFilters }
 }
 
 function loadNextPage() {
@@ -151,11 +222,14 @@ function setupInfiniteScroll() {
 }
 
 onMounted(() => {
+  syncFiltersToUrl(activeFilters.value, true)
+  window.addEventListener('popstate', applyFiltersFromUrl)
   fetchProducts(productListUrl())
 })
 
 onBeforeUnmount(() => {
   observer?.disconnect()
+  window.removeEventListener('popstate', applyFiltersFromUrl)
 })
 
 watch(() => props.selectedCategory?.slug, () => {
@@ -166,6 +240,12 @@ watch(() => props.selectedCategory?.slug, () => {
 })
 
 watch(activeFilters, () => {
+  if (isApplyingUrlState) {
+    isApplyingUrlState = false
+  } else {
+    syncFiltersToUrl(activeFilters.value)
+  }
+
   loadFirstPage()
 }, { deep: true })
 </script>
