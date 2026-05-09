@@ -3,7 +3,7 @@ import { ref } from 'vue'
 
 import CategoryTree from './components/CategoryTree.vue'
 import Header from './components/Header.vue'
-import VendorProductForm from './components/VendorProductForm.vue'
+import ProductListingPage from './components/ProductListingPage.vue'
 
 const selectedCategory = ref(null)
 </script>
@@ -14,23 +14,7 @@ const selectedCategory = ref(null)
 
     <main class="mx-auto flex min-h-[calc(100vh-88px)] w-full max-w-7xl border-x border-slate-200 bg-white">
       <CategoryTree @select="selectedCategory = $event" />
-
-      <section class="min-w-0 flex-1 px-6 py-5">
-        <div class="flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
-          <div>
-            <h1 class="text-xl font-semibold text-slate-950">
-              {{ selectedCategory?.name || 'Product Catalog' }}
-            </h1>
-            <p class="mt-1 text-sm text-slate-500">
-              Tech products for the current store
-            </p>
-          </div>
-        </div>
-
-        <div class="py-5">
-          <VendorProductForm />
-        </div>
-      </section>
+      <ProductListingPage :selected-category="selectedCategory" />
     </main>
   </div>
 </template>
