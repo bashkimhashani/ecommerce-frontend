@@ -10,6 +10,8 @@ const props = defineProps({
   },
 })
 
+const emit = defineEmits(['view-product'])
+
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 const products = ref([])
 const nextPageUrl = ref(null)
@@ -162,6 +164,7 @@ watch(() => props.selectedCategory?.slug, () => {
             v-for="product in products"
             :key="product.id"
             :product="product"
+            @view="emit('view-product', $event)"
           />
         </div>
 

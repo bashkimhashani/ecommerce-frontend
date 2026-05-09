@@ -8,6 +8,8 @@ const props = defineProps({
   },
 })
 
+const emit = defineEmits(['view'])
+
 const formattedPrice = computed(() => {
   const numericPrice = Number(props.product.price)
 
@@ -68,6 +70,7 @@ const ratingLabel = computed(() => {
         <button
           type="button"
           class="rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          @click="emit('view', product.slug)"
         >
           View
         </button>
