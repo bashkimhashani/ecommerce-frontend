@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps({
   product: {
@@ -8,7 +8,8 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['view'])
+const emit = defineEmits(['view', 'toggle-wishlist'])
+const isWishlisted = ref(Boolean(props.product.is_wishlisted))
 
 const formattedPrice = computed(() => {
   const numericPrice = Number(props.product.price)
@@ -30,11 +31,23 @@ const ratingLabel = computed(() => {
 
   return Number(props.product.avg_rating).toFixed(1)
 })
+
+function toggleWishlist() {
+  isWishlisted.value = !isWishlisted.value
+  emit('toggle-wishlist', {
+    product: props.product,
+    isWishlisted: isWishlisted.value,
+  })
+}
+
+watch(() => props.product.is_wishlisted, (nextValue) => {
+  isWishlisted.value = Boolean(nextValue)
+})
 </script>
 
 <template>
   <article class="flex h-full flex-col overflow-hidden rounded-md border border-slate-200 bg-white transition hover:border-slate-300 hover:shadow-sm">
-    <div class="aspect-[4/3] bg-slate-100">
+    <div class="relative aspect-[4/3] bg-slate-100">
       <img
         v-if="product.thumbnail"
         :src="product.thumbnail"
@@ -47,6 +60,31 @@ const ratingLabel = computed(() => {
           {{ product.name }}
         </span>
       </div>
+
+      <button
+        type="button"
+        class="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/90 text-slate-600 shadow-sm transition hover:bg-white hover:text-rose-600"
+        :class="{ 'text-rose-600': isWishlisted }"
+        :aria-pressed="isWishlisted"
+        :aria-label="isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'"
+        @click="toggleWishlist"
+      >
+        <svg
+          class="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path
+            d="M20.8 4.6c-1.5-1.4-3.9-1.4-5.4.1L12 8.1 8.6 4.7C7.1 3.2 4.7 3.1 3.2 4.6c-1.7 1.6-1.7 4.2-.1 5.9l8.9 8.9 8.9-8.9c1.6-1.7 1.6-4.3-.1-5.9Z"
+            :fill="isWishlisted ? 'currentColor' : 'none'"
+          />
+        </svg>
+      </button>
     </div>
 
     <div class="flex flex-1 flex-col p-4">
@@ -55,7 +93,7 @@ const ratingLabel = computed(() => {
           {{ product.name }}
         </h2>
         <span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-          {{ ratingLabel }}
+          {{ ratingLabel === 'New' ? ratingLabel : `${ratingLabel} rating` }}
         </span>
       </div>
 
