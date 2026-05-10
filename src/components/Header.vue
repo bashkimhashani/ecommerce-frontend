@@ -1,6 +1,6 @@
 <script setup>
     import NavigationBar from './NavigationBar.vue';
-    import Searchbar from './Searchbar.vue';
+    import SearchBar from './SearchBar.vue';
 </script>
 
 <template>
@@ -11,7 +11,7 @@
             </div>
 
             <NavigationBar/>
-            <Searchbar/>
+            <SearchBar/>
             
         </div>
 
