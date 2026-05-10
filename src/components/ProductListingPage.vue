@@ -15,12 +15,13 @@ const emit = defineEmits(['view-product'])
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 const defaultFilters = {
+  query: '',
   brand: '',
   category: '',
   minPrice: 0,
   maxPrice: 3000,
 }
-const filterParamKeys = ['brand', 'category', 'min_price', 'max_price']
+const filterParamKeys = ['q', 'brand', 'category', 'min_price', 'max_price']
 const products = ref([])
 const facets = ref({
   brands: [],
@@ -57,6 +58,9 @@ function filtersToSearchParams(filters) {
 
   if (filters.brand) {
     params.set('brand', filters.brand)
+  }
+  if (filters.query) {
+    params.set('q', filters.query)
   }
   if (filters.category) {
     params.set('category', filters.category)
@@ -97,6 +101,7 @@ function readFiltersFromUrl() {
   )
 
   return {
+    query: params.get('q') || defaultFilters.query,
     brand: params.get('brand') || defaultFilters.brand,
     category: params.get('category') || defaultFilters.category,
     minPrice: Math.min(minPrice, maxPrice),
@@ -137,6 +142,10 @@ function syncFiltersToUrl(filters, replace = false) {
 function applyFiltersFromUrl() {
   isApplyingUrlState = true
   activeFilters.value = readFiltersFromUrl()
+}
+
+function handleSearchChange() {
+  applyFiltersFromUrl()
 }
 
 function resolveApiUrl(url) {
@@ -224,12 +233,14 @@ function setupInfiniteScroll() {
 onMounted(() => {
   syncFiltersToUrl(activeFilters.value, true)
   window.addEventListener('popstate', applyFiltersFromUrl)
+  window.addEventListener('catalog-search-change', handleSearchChange)
   fetchProducts(productListUrl())
 })
 
 onBeforeUnmount(() => {
   observer?.disconnect()
   window.removeEventListener('popstate', applyFiltersFromUrl)
+  window.removeEventListener('catalog-search-change', handleSearchChange)
 })
 
 watch(() => props.selectedCategory?.slug, () => {
