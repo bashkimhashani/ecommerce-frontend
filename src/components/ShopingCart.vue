@@ -1,7 +1,292 @@
-<script>
+<script setup>
+import { computed, onMounted, ref } from 'vue'
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+
+const isOpen = ref(false)
+const isLoading = ref(false)
+const errorMessage = ref('')
+const cart = ref({
+  items: [],
+  total_items: 0,
+  subtotal: '0.00',
+})
+const pendingItemIds = ref(new Set())
+
+const itemCount = computed(() => cart.value?.total_items || 0)
+const subtotal = computed(() => Number(cart.value?.subtotal || 0).toFixed(2))
+
+function authHeaders() {
+  const token = localStorage.getItem('accessToken') || localStorage.getItem('access')
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+async function requestCart(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders(),
+      ...(options.headers || {}),
+    },
+    ...options,
+  })
+
+  if (response.status === 204) {
+    return null
+  }
+
+  const data = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    const detail = data.detail || data.quantity?.[0] || 'Cart request failed.'
+    throw new Error(detail)
+  }
+
+  return data
+}
+
+async function loadCart() {
+  isLoading.value = true
+  errorMessage.value = ''
+
+  try {
+    cart.value = await requestCart('/api/v1/cart/')
+  } catch (error) {
+    errorMessage.value = error.message
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function updateQuantity(item, nextQuantity) {
+  if (nextQuantity < 1 || pendingItemIds.value.has(item.id)) {
+    return
+  }
+
+  pendingItemIds.value.add(item.id)
+  errorMessage.value = ''
+
+  try {
+    const updatedItem = await requestCart(`/api/v1/cart/items/${item.id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ quantity: nextQuantity }),
+    })
+
+    cart.value = {
+      ...cart.value,
+      items: cart.value.items.map((cartItem) => (
+        cartItem.id === updatedItem.id ? updatedItem : cartItem
+      )),
+    }
+    recalculateCartTotals()
+  } catch (error) {
+    errorMessage.value = error.message
+  } finally {
+    pendingItemIds.value.delete(item.id)
+  }
+}
+
+async function removeItem(item) {
+  if (pendingItemIds.value.has(item.id)) {
+    return
+  }
+
+  pendingItemIds.value.add(item.id)
+  errorMessage.value = ''
+
+  try {
+    await requestCart(`/api/v1/cart/items/${item.id}/`, {
+      method: 'DELETE',
+    })
+
+    cart.value = {
+      ...cart.value,
+      items: cart.value.items.filter((cartItem) => cartItem.id !== item.id),
+    }
+    recalculateCartTotals()
+  } catch (error) {
+    errorMessage.value = error.message
+  } finally {
+    pendingItemIds.value.delete(item.id)
+  }
+}
+
+function recalculateCartTotals() {
+  const items = cart.value.items || []
+  const totalItems = items.reduce((sum, item) => sum + Number(item.quantity), 0)
+  const totalPrice = items.reduce((sum, item) => sum + Number(item.line_total), 0)
+
+  cart.value = {
+    ...cart.value,
+    total_items: totalItems,
+    subtotal: totalPrice.toFixed(2),
+  }
+}
+
+function openDrawer() {
+  isOpen.value = true
+  loadCart()
+}
+
+function closeDrawer() {
+  isOpen.value = false
+}
+
+function isPending(item) {
+  return pendingItemIds.value.has(item.id)
+}
+
+onMounted(loadCart)
 </script>
 
 <template>
-    
+  <div>
+    <button
+      class="fixed right-5 top-5 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-950 text-white shadow-lg transition hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2"
+      type="button"
+      aria-label="Open cart"
+      @click="openDrawer"
+    >
+      <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none">
+        <path d="M6.5 6.5h15l-2 7h-11z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+        <path d="M6.5 6.5 5.8 3H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        <circle cx="9.5" cy="19" r="1.4" fill="currentColor" />
+        <circle cx="18" cy="19" r="1.4" fill="currentColor" />
+      </svg>
+
+      <span
+        v-if="itemCount"
+        class="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 text-xs font-semibold text-neutral-950"
+      >
+        {{ itemCount }}
+      </span>
+    </button>
+
+    <div
+      v-if="isOpen"
+      class="fixed inset-0 z-40 bg-neutral-950/45"
+      aria-hidden="true"
+      @click="closeDrawer"
+    />
+
+    <aside
+      v-if="isOpen"
+      class="fixed right-0 top-0 z-50 flex h-full w-full max-w-md transform flex-col bg-white shadow-2xl transition-transform duration-200"
+      aria-label="Shopping cart"
+    >
+      <header class="flex items-center justify-between border-b border-neutral-200 px-5 py-4">
+        <div>
+          <h2 class="text-lg font-semibold text-neutral-950">Cart</h2>
+          <p class="text-sm text-neutral-500">{{ itemCount }} items</p>
+        </div>
+
+        <button
+          class="flex h-10 w-10 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+          type="button"
+          aria-label="Close cart"
+          @click="closeDrawer"
+        >
+          <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none">
+            <path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+        </button>
+      </header>
+
+      <div v-if="errorMessage" class="mx-5 mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        {{ errorMessage }}
+      </div>
+
+      <div class="flex-1 overflow-y-auto px-5 py-4">
+        <div v-if="isLoading" class="space-y-3">
+          <div v-for="index in 3" :key="index" class="h-24 animate-pulse rounded-md bg-neutral-100" />
+        </div>
+
+        <div v-else-if="!cart.items.length" class="flex h-full items-center justify-center text-center">
+          <div>
+            <p class="text-base font-medium text-neutral-950">Your cart is empty</p>
+            <p class="mt-1 text-sm text-neutral-500">Add tech products to see them here.</p>
+          </div>
+        </div>
+
+        <ul v-else class="space-y-3">
+          <li
+            v-for="item in cart.items"
+            :key="item.id"
+            class="rounded-md border border-neutral-200 p-3"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <h3 class="truncate text-sm font-semibold text-neutral-950">
+                  {{ item.product_name || `Variant #${item.product_variant_id}` }}
+                </h3>
+                <p v-if="item.variant_label" class="mt-0.5 truncate text-xs text-neutral-500">
+                  {{ item.variant_label }}
+                </p>
+                <p class="mt-2 text-sm font-medium text-neutral-900">
+                  ${{ Number(item.unit_price).toFixed(2) }}
+                </p>
+              </div>
+
+              <button
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+                type="button"
+                aria-label="Remove item"
+                :disabled="isPending(item)"
+                @click="removeItem(item)"
+              >
+                <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+            </div>
+
+            <div class="mt-4 flex items-center justify-between gap-3">
+              <div class="grid h-10 grid-cols-[40px_48px_40px] overflow-hidden rounded-md border border-neutral-300">
+                <button
+                  class="flex items-center justify-center text-lg text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:text-neutral-300"
+                  type="button"
+                  aria-label="Decrease quantity"
+                  :disabled="item.quantity <= 1 || isPending(item)"
+                  @click="updateQuantity(item, item.quantity - 1)"
+                >
+                  -
+                </button>
+                <output class="flex items-center justify-center border-x border-neutral-300 text-sm font-semibold text-neutral-950">
+                  {{ item.quantity }}
+                </output>
+                <button
+                  class="flex items-center justify-center text-lg text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:text-neutral-300"
+                  type="button"
+                  aria-label="Increase quantity"
+                  :disabled="isPending(item)"
+                  @click="updateQuantity(item, item.quantity + 1)"
+                >
+                  +
+                </button>
+              </div>
+
+              <p class="text-sm font-semibold text-neutral-950">
+                ${{ Number(item.line_total).toFixed(2) }}
+              </p>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <footer class="border-t border-neutral-200 p-5">
+        <div class="flex items-center justify-between text-base font-semibold text-neutral-950">
+          <span>Subtotal</span>
+          <span>${{ subtotal }}</span>
+        </div>
+        <button
+          class="mt-4 h-11 w-full rounded-md bg-emerald-600 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
+          type="button"
+          :disabled="!itemCount"
+        >
+          Checkout
+        </button>
+      </footer>
+    </aside>
+  </div>
 </template>
