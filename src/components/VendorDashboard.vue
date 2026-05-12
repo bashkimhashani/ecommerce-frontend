@@ -1,5 +1,8 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { Chart, ArcElement, DoughnutController, Legend, Tooltip } from 'chart.js'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+
+Chart.register(ArcElement, DoughnutController, Legend, Tooltip)
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 const authToken = ref('')
@@ -9,13 +12,18 @@ const summary = ref({
   low_stock_alerts: 0,
 })
 const inventoryItems = ref([])
+const orderSummaryItems = ref([])
 const quantityDrafts = reactive({})
 const isLoadingSummary = ref(false)
 const isLoadingInventory = ref(false)
+const isLoadingOrderSummary = ref(false)
 const summaryError = ref('')
 const inventoryError = ref('')
+const orderSummaryError = ref('')
 const savedItemId = ref(null)
 const savingItemId = ref(null)
+const orderChartCanvas = ref(null)
+let orderChart = null
 
 const summaryCards = computed(() => [
   {
@@ -38,6 +46,13 @@ const summaryCards = computed(() => [
 ])
 
 const hasInventory = computed(() => inventoryItems.value.length > 0)
+const hasOrderSummary = computed(() => orderSummaryItems.value.length > 0)
+const orderSummaryTotal = computed(() => (
+  orderSummaryItems.value.reduce((total, item) => total + Number(item.count || 0), 0)
+))
+const orderSummaryRevenue = computed(() => (
+  orderSummaryItems.value.reduce((total, item) => total + Number(item.total_amount || 0), 0)
+))
 
 function authHeaders() {
   return {
@@ -72,6 +87,12 @@ function formatCurrency(value) {
     currency: 'USD',
     maximumFractionDigits: 2,
   }).format(Number(value || 0))
+}
+
+function formatStatus(status) {
+  return String(status || 'unknown')
+    .replace(/[_-]/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
 }
 
 function itemQuantity(item) {
@@ -146,6 +167,87 @@ function normalizeInventoryPayload(payload) {
   return []
 }
 
+function normalizeOrderSummaryPayload(payload) {
+  if (Array.isArray(payload)) {
+    return payload
+  }
+
+  if (Array.isArray(payload?.results)) {
+    return payload.results
+  }
+
+  if (Array.isArray(payload?.statuses)) {
+    return payload.statuses
+  }
+
+  if (Array.isArray(payload?.summary)) {
+    return payload.summary
+  }
+
+  return []
+}
+
+function destroyOrderChart() {
+  if (!orderChart) {
+    return
+  }
+
+  orderChart.destroy()
+  orderChart = null
+}
+
+function renderOrderChart() {
+  destroyOrderChart()
+
+  if (!orderChartCanvas.value || !hasOrderSummary.value) {
+    return
+  }
+
+  orderChart = new Chart(orderChartCanvas.value, {
+    type: 'doughnut',
+    data: {
+      labels: orderSummaryItems.value.map((item) => formatStatus(item.status)),
+      datasets: [
+        {
+          data: orderSummaryItems.value.map((item) => Number(item.count || 0)),
+          backgroundColor: [
+            '#0891b2',
+            '#059669',
+            '#d97706',
+            '#dc2626',
+            '#4f46e5',
+            '#64748b',
+          ],
+          borderColor: '#ffffff',
+          borderWidth: 3,
+          hoverOffset: 6,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: {
+        legend: {
+          display: false,
+        },
+        tooltip: {
+          callbacks: {
+            label(context) {
+              const value = Number(context.raw || 0)
+              const share = orderSummaryTotal.value
+                ? Math.round((value / orderSummaryTotal.value) * 100)
+                : 0
+              return `${context.label}: ${formatNumber(value)} orders (${share}%)`
+            },
+          },
+        },
+      },
+    },
+  })
+}
+
 async function fetchSummary() {
   isLoadingSummary.value = true
   summaryError.value = ''
@@ -190,10 +292,37 @@ async function fetchInventory() {
   }
 }
 
+async function fetchOrderSummary() {
+  isLoadingOrderSummary.value = true
+  orderSummaryError.value = ''
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/v1/vendor/orders/summary/`, {
+      headers: authHeaders(),
+    })
+
+    if (!response.ok) {
+      throw new Error('Could not load order summary.')
+    }
+
+    const payload = await response.json()
+    orderSummaryItems.value = normalizeOrderSummaryPayload(payload)
+    isLoadingOrderSummary.value = false
+    await nextTick()
+    renderOrderChart()
+  } catch (error) {
+    orderSummaryItems.value = []
+    destroyOrderChart()
+    orderSummaryError.value = error.message || 'Could not load order summary.'
+    isLoadingOrderSummary.value = false
+  }
+}
+
 async function refreshDashboard() {
   await Promise.all([
     fetchSummary(),
     fetchInventory(),
+    fetchOrderSummary(),
   ])
 }
 
@@ -240,6 +369,10 @@ async function saveQuantity(item) {
 onMounted(() => {
   refreshDashboard()
 })
+
+onBeforeUnmount(() => {
+  destroyOrderChart()
+})
 </script>
 
 <template>
@@ -260,7 +393,7 @@ onMounted(() => {
         <button
           type="button"
           class="h-10 rounded-md border border-slate-200 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          :disabled="isLoadingSummary || isLoadingInventory"
+          :disabled="isLoadingSummary || isLoadingInventory || isLoadingOrderSummary"
           @click="refreshDashboard"
         >
           Refresh
@@ -286,6 +419,73 @@ onMounted(() => {
     >
       {{ summaryError }}
     </p>
+
+    <section class="mb-5 rounded-md border border-slate-200 bg-white">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-950">Order Reports</h2>
+          <p class="mt-1 text-xs text-slate-500">Status breakdown from vendor order items</p>
+        </div>
+        <div class="text-right text-xs text-slate-500">
+          <p><span class="font-semibold text-slate-950">{{ formatNumber(orderSummaryTotal) }}</span> orders</p>
+          <p><span class="font-semibold text-slate-950">{{ formatCurrency(orderSummaryRevenue) }}</span> revenue</p>
+        </div>
+      </div>
+
+      <div v-if="isLoadingOrderSummary" class="grid gap-4 p-4 md:grid-cols-[280px_minmax(0,1fr)]">
+        <div class="h-64 animate-pulse rounded-md bg-slate-50"></div>
+        <div class="space-y-3">
+          <div v-for="item in 4" :key="item" class="h-12 animate-pulse rounded-md bg-slate-50"></div>
+        </div>
+      </div>
+
+      <div
+        v-else-if="orderSummaryError"
+        class="m-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+      >
+        {{ orderSummaryError }}
+      </div>
+
+      <div
+        v-else-if="!hasOrderSummary"
+        class="px-4 py-10 text-center"
+      >
+        <p class="text-sm font-semibold text-slate-700">No order report data yet.</p>
+        <p class="mt-1 text-sm text-slate-500">Status totals will appear after orders are placed.</p>
+      </div>
+
+      <div v-else class="grid gap-4 p-4 md:grid-cols-[280px_minmax(0,1fr)]">
+        <div class="relative h-64">
+          <canvas ref="orderChartCanvas" aria-label="Order status chart"></canvas>
+          <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div class="text-center">
+              <p class="text-2xl font-semibold text-slate-950">{{ formatNumber(orderSummaryTotal) }}</p>
+              <p class="text-xs font-medium text-slate-500">Orders</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="divide-y divide-slate-100">
+          <div
+            v-for="item in orderSummaryItems"
+            :key="item.status"
+            class="grid grid-cols-[minmax(0,1fr)_80px_110px] items-center gap-3 py-3 text-sm"
+          >
+            <div class="min-w-0">
+              <p class="truncate font-medium text-slate-950">{{ formatStatus(item.status) }}</p>
+              <p class="text-xs text-slate-500">{{ formatCurrency(item.total_amount) }}</p>
+            </div>
+            <p class="text-right font-semibold text-slate-700">{{ formatNumber(item.count) }}</p>
+            <div class="h-2 rounded-full bg-slate-100">
+              <div
+                class="h-2 rounded-full bg-cyan-600"
+                :style="{ width: `${orderSummaryTotal ? Math.max(8, (Number(item.count || 0) / orderSummaryTotal) * 100) : 0}%` }"
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <section class="rounded-md border border-slate-200 bg-white">
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
