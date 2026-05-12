@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 
 const emit = defineEmits(['close'])
 
@@ -9,6 +9,7 @@ const ADDRESS_KEY = 'vendora.checkout.address'
 const IDEMPOTENCY_KEY = 'vendora.checkout.idempotencyKey'
 const SESSION_KEY = 'vendora.checkout.session'
 const PAYMENT_KEY = 'vendora.checkout.payment'
+const HISTORY_NAMESPACE = 'vendora.checkout'
 
 const steps = [
   { id: 'address', label: 'Address' },
@@ -46,6 +47,7 @@ const payment = reactive({
   expiry: '',
   cvc: '',
 })
+let isApplyingHistoryStep = false
 
 const activeStepIndex = computed(() => (
   Math.max(0, steps.findIndex((step) => step.id === currentStep.value))
@@ -64,7 +66,11 @@ const canSubmitPayment = computed(() => (
 ))
 
 watch(currentStep, (step) => {
-  sessionStorage.setItem(STEP_KEY, step)
+  persistWizardStep(step)
+
+  if (!isApplyingHistoryStep) {
+    pushCheckoutHistory(step)
+  }
 })
 
 watch(address, () => {
@@ -122,7 +128,7 @@ async function submitAddress() {
       },
     )
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(checkoutSession.value))
-    currentStep.value = 'payment'
+    setCheckoutStep('payment')
   } catch (error) {
     errorMessage.value = error.message
   } finally {
@@ -159,22 +165,37 @@ function submitPayment() {
     last4: digitsOnly(payment.card_number).slice(-4),
   }
   sessionStorage.setItem(PAYMENT_KEY, JSON.stringify(paymentSummary.value))
-  currentStep.value = 'confirmation'
+  setCheckoutStep('confirmation')
 }
 
 function goToStep(stepId) {
   if (stepId === 'address') {
-    currentStep.value = stepId
+    setCheckoutStep(stepId)
     return
   }
 
   if (stepId === 'payment' && checkoutSession.value?.id) {
-    currentStep.value = stepId
+    setCheckoutStep(stepId)
     return
   }
 
   if (stepId === 'confirmation' && paymentSummary.value) {
-    currentStep.value = stepId
+    setCheckoutStep(stepId)
+  }
+}
+
+function goBackToStep(stepId) {
+  if (window.history.state?.checkoutStep === currentStep.value) {
+    window.history.back()
+    return
+  }
+
+  setCheckoutStep(stepId)
+}
+
+function setCheckoutStep(step) {
+  if (isKnownStep(step)) {
+    currentStep.value = step
   }
 }
 
@@ -200,7 +221,7 @@ function getIdempotencyKey() {
 
 function readStoredStep() {
   const storedStep = sessionStorage.getItem(STEP_KEY)
-  return steps.some((step) => step.id === storedStep) ? storedStep : 'address'
+  return isKnownStep(storedStep) ? storedStep : 'address'
 }
 
 function readJson(key, fallback) {
@@ -213,6 +234,62 @@ function readJson(key, fallback) {
 
 function digitsOnly(value) {
   return value.replace(/\D/g, '')
+}
+
+function initializeCheckoutHistory() {
+  persistWizardStep(currentStep.value)
+  window.history.replaceState(
+    {
+      ...window.history.state,
+      checkoutFlow: HISTORY_NAMESPACE,
+      checkoutStep: currentStep.value,
+    },
+    '',
+    window.location.href,
+  )
+  window.addEventListener('popstate', handlePopState)
+}
+
+function pushCheckoutHistory(step) {
+  const currentHistoryState = window.history.state || {}
+  if (
+    currentHistoryState.checkoutFlow === HISTORY_NAMESPACE
+    && currentHistoryState.checkoutStep === step
+  ) {
+    return
+  }
+
+  window.history.pushState(
+    {
+      ...currentHistoryState,
+      checkoutFlow: HISTORY_NAMESPACE,
+      checkoutStep: step,
+    },
+    '',
+    window.location.href,
+  )
+}
+
+function handlePopState(event) {
+  const step = event.state?.checkoutStep
+  if (!isKnownStep(step)) {
+    return
+  }
+
+  isApplyingHistoryStep = true
+  currentStep.value = step
+  persistWizardStep(step)
+  isApplyingHistoryStep = false
+}
+
+function persistWizardStep(step) {
+  if (isKnownStep(step)) {
+    sessionStorage.setItem(STEP_KEY, step)
+  }
+}
+
+function isKnownStep(stepId) {
+  return steps.some((step) => step.id === stepId)
 }
 
 function formatApiError(data) {
@@ -237,7 +314,14 @@ function formatApiError(data) {
   return 'Checkout request failed.'
 }
 
-onMounted(loadCart)
+onMounted(() => {
+  initializeCheckoutHistory()
+  loadCart()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('popstate', handlePopState)
+})
 </script>
 
 <template>
@@ -357,7 +441,7 @@ onMounted(loadCart)
           </div>
 
           <div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-between">
-            <button class="h-11 rounded-md border border-neutral-300 px-5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100" type="button" @click="currentStep = 'address'">
+            <button class="h-11 rounded-md border border-neutral-300 px-5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100" type="button" @click="goBackToStep('address')">
               Back
             </button>
             <button
@@ -394,7 +478,7 @@ onMounted(loadCart)
           </dl>
 
           <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-            <button class="h-11 rounded-md border border-neutral-300 px-5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100" type="button" @click="currentStep = 'payment'">
+            <button class="h-11 rounded-md border border-neutral-300 px-5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100" type="button" @click="goBackToStep('payment')">
               Back
             </button>
             <button class="h-11 rounded-md bg-neutral-950 px-5 text-sm font-semibold text-white transition hover:bg-neutral-800" type="button" @click="resetCheckout">
