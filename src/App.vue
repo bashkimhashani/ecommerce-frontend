@@ -5,7 +5,7 @@ import CategoryTree from './components/CategoryTree.vue'
 import Header from './components/Header.vue'
 import ProductDetailPage from './components/ProductDetailPage.vue'
 import ProductListingPage from './components/ProductListingPage.vue'
-import VendorProductForm from './components/VendorProductForm.vue'
+import VendorDashboard from './components/VendorDashboard.vue'
 
 const selectedCategory = ref(null)
 const selectedProductSlug = ref('')
@@ -45,7 +45,7 @@ function selectCategory(category) {
       </div>
 
       <main class="flex min-h-[calc(100vh-137px)] w-full bg-white">
-        <VendorProductForm v-if="activeView === 'vendor'" />
+        <VendorDashboard v-if="activeView === 'vendor'" />
         <template v-else>
           <CategoryTree @select="selectCategory" />
           <ProductDetailPage
