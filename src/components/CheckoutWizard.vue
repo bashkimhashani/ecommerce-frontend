@@ -1,9 +1,11 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { loadStripe } from '@stripe/stripe-js'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 
 const emit = defineEmits(['close'])
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || ''
 const STEP_KEY = 'vendora.checkout.step'
 const ADDRESS_KEY = 'vendora.checkout.address'
 const IDEMPOTENCY_KEY = 'vendora.checkout.idempotencyKey'
@@ -28,6 +30,9 @@ const cart = ref({
 })
 const checkoutSession = ref(readJson(SESSION_KEY, null))
 const paymentSummary = ref(readJson(PAYMENT_KEY, null))
+const stripeError = ref('')
+const cardElementReady = ref(false)
+const cardComplete = ref(false)
 
 const address = reactive({
   full_name: '',
@@ -43,10 +48,11 @@ const address = reactive({
 
 const payment = reactive({
   cardholder: '',
-  card_number: '',
-  expiry: '',
-  cvc: '',
 })
+let stripePromise = null
+let stripeInstance = null
+let elementsInstance = null
+let cardElement = null
 let isApplyingHistoryStep = false
 
 const activeStepIndex = computed(() => (
@@ -56,17 +62,25 @@ const subtotal = computed(() => Number(cart.value?.subtotal || 0).toFixed(2))
 const shippingEstimate = computed(() => (Number(subtotal.value) > 0 ? 6.99 : 0))
 const total = computed(() => (Number(subtotal.value) + shippingEstimate.value).toFixed(2))
 const maskedCard = computed(() => (
-  paymentSummary.value?.last4 ? `Card ending in ${paymentSummary.value.last4}` : 'Payment details pending'
+  paymentSummary.value?.payment_intent_id
+    ? `Stripe payment ${paymentSummary.value.status}`
+    : 'Payment details pending'
 ))
 const canSubmitPayment = computed(() => (
   payment.cardholder.trim()
-  && digitsOnly(payment.card_number).length >= 12
-  && /^\d{2}\/\d{2}$/.test(payment.expiry.trim())
-  && digitsOnly(payment.cvc).length >= 3
+  && cardElementReady.value
+  && cardComplete.value
+  && !isSubmitting.value
 ))
 
 watch(currentStep, (step) => {
   persistWizardStep(step)
+
+  if (step === 'payment') {
+    nextTick(() => {
+      initializeStripeElement()
+    })
+  }
 
   if (!isApplyingHistoryStep) {
     pushCheckoutHistory(step)
@@ -153,19 +167,55 @@ async function ensureCheckoutSession() {
   return session
 }
 
-function submitPayment() {
+async function submitPayment() {
   if (!canSubmitPayment.value) {
     errorMessage.value = 'Enter complete payment details.'
     return
   }
 
   errorMessage.value = ''
-  paymentSummary.value = {
-    cardholder: payment.cardholder.trim(),
-    last4: digitsOnly(payment.card_number).slice(-4),
+  stripeError.value = ''
+  isSubmitting.value = true
+
+  try {
+    const session = await ensureCheckoutSession()
+    const paymentIntent = await apiRequest(
+      `/api/v1/checkout/session/${session.id}/payment-intent/`,
+      {
+        method: 'POST',
+        body: JSON.stringify({}),
+      },
+    )
+
+    const result = await stripeInstance.confirmCardPayment(
+      paymentIntent.client_secret,
+      {
+        payment_method: {
+          card: cardElement,
+          billing_details: {
+            name: payment.cardholder.trim(),
+          },
+        },
+      },
+    )
+
+    if (result.error) {
+      throw new Error(result.error.message || 'Card payment failed.')
+    }
+
+    paymentSummary.value = {
+      cardholder: payment.cardholder.trim(),
+      payment_intent_id: result.paymentIntent.id,
+      status: result.paymentIntent.status,
+    }
+    sessionStorage.setItem(PAYMENT_KEY, JSON.stringify(paymentSummary.value))
+    setCheckoutStep('confirmation')
+  } catch (error) {
+    stripeError.value = error.message
+    errorMessage.value = error.message
+  } finally {
+    isSubmitting.value = false
   }
-  sessionStorage.setItem(PAYMENT_KEY, JSON.stringify(paymentSummary.value))
-  setCheckoutStep('confirmation')
 }
 
 function goToStep(stepId) {
@@ -208,6 +258,64 @@ function resetCheckout() {
   emit('close')
 }
 
+async function initializeStripeElement() {
+  if (cardElement || !document.querySelector('#stripe-card-element')) {
+    return
+  }
+
+  if (!STRIPE_PUBLISHABLE_KEY) {
+    stripeError.value = 'Stripe publishable key is not configured.'
+    return
+  }
+
+  try {
+    stripePromise = stripePromise || loadStripe(STRIPE_PUBLISHABLE_KEY)
+    stripeInstance = await stripePromise
+    if (!stripeInstance) {
+      throw new Error('Stripe could not be initialized.')
+    }
+
+    elementsInstance = stripeInstance.elements()
+    cardElement = elementsInstance.create('card', {
+      hidePostalCode: true,
+      style: {
+        base: {
+          color: '#171717',
+          fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
+          fontSize: '16px',
+          '::placeholder': {
+            color: '#737373',
+          },
+        },
+        invalid: {
+          color: '#b91c1c',
+        },
+      },
+    })
+    cardElement.mount('#stripe-card-element')
+    cardElement.on('ready', () => {
+      cardElementReady.value = true
+    })
+    cardElement.on('change', (event) => {
+      cardComplete.value = event.complete
+      stripeError.value = event.error?.message || ''
+    })
+  } catch (error) {
+    stripeError.value = error.message
+  }
+}
+
+function destroyStripeElement() {
+  if (cardElement) {
+    cardElement.destroy()
+  }
+
+  cardElement = null
+  elementsInstance = null
+  cardElementReady.value = false
+  cardComplete.value = false
+}
+
 function getIdempotencyKey() {
   const existingKey = sessionStorage.getItem(IDEMPOTENCY_KEY)
   if (existingKey) {
@@ -230,10 +338,6 @@ function readJson(key, fallback) {
   } catch {
     return fallback
   }
-}
-
-function digitsOnly(value) {
-  return value.replace(/\D/g, '')
 }
 
 function initializeCheckoutHistory() {
@@ -317,10 +421,16 @@ function formatApiError(data) {
 onMounted(() => {
   initializeCheckoutHistory()
   loadCart()
+  if (currentStep.value === 'payment') {
+    nextTick(() => {
+      initializeStripeElement()
+    })
+  }
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('popstate', handlePopState)
+  destroyStripeElement()
 })
 </script>
 
@@ -421,23 +531,18 @@ onBeforeUnmount(() => {
         <form v-else-if="currentStep === 'payment'" class="grid gap-4" @submit.prevent="submitPayment">
           <label class="grid gap-1 text-sm font-medium text-neutral-700">
             Name on card
-            <input v-model="payment.cardholder" class="h-11 rounded-md border border-neutral-300 px-3 text-neutral-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" required>
+            <input v-model="payment.cardholder" autocomplete="cc-name" class="h-11 rounded-md border border-neutral-300 px-3 text-neutral-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" required>
           </label>
 
-          <label class="grid gap-1 text-sm font-medium text-neutral-700">
-            Card number
-            <input v-model="payment.card_number" inputmode="numeric" autocomplete="cc-number" class="h-11 rounded-md border border-neutral-300 px-3 text-neutral-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" placeholder="4242 4242 4242 4242" required>
-          </label>
-
-          <div class="grid grid-cols-2 gap-4">
-            <label class="grid gap-1 text-sm font-medium text-neutral-700">
-              Expiry
-              <input v-model="payment.expiry" class="h-11 rounded-md border border-neutral-300 px-3 text-neutral-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" placeholder="MM/YY" required>
-            </label>
-            <label class="grid gap-1 text-sm font-medium text-neutral-700">
-              CVC
-              <input v-model="payment.cvc" inputmode="numeric" autocomplete="cc-csc" class="h-11 rounded-md border border-neutral-300 px-3 text-neutral-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" required>
-            </label>
+          <div class="grid gap-1 text-sm font-medium text-neutral-700">
+            Card details
+            <div
+              id="stripe-card-element"
+              class="min-h-11 rounded-md border border-neutral-300 bg-white px-3 py-3 text-neutral-950 outline-none transition focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-100"
+            />
+            <p v-if="stripeError" class="text-sm font-medium text-red-700">
+              {{ stripeError }}
+            </p>
           </div>
 
           <div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-between">
@@ -449,7 +554,7 @@ onBeforeUnmount(() => {
               type="submit"
               :disabled="!canSubmitPayment"
             >
-              Review order
+              {{ isSubmitting ? 'Processing payment...' : 'Pay and review order' }}
             </button>
           </div>
         </form>
