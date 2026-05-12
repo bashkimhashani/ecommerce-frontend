@@ -1,6 +1,8 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 
+const emit = defineEmits(['checkout'])
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 const isOpen = ref(false)
@@ -131,6 +133,15 @@ function openDrawer() {
 
 function closeDrawer() {
   isOpen.value = false
+}
+
+function startCheckout() {
+  if (!itemCount.value) {
+    return
+  }
+
+  closeDrawer()
+  emit('checkout')
 }
 
 function isPending(item) {
@@ -283,6 +294,7 @@ onMounted(loadCart)
           class="mt-4 h-11 w-full rounded-md bg-emerald-600 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
           type="button"
           :disabled="!itemCount"
+          @click="startCheckout"
         >
           Checkout
         </button>

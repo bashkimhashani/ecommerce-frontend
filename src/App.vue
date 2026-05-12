@@ -1,13 +1,28 @@
 <script setup>
+import { ref } from 'vue'
+
+import CheckoutWizard from './components/CheckoutWizard.vue'
 import Header from './components/Header.vue'
 import ShopingCart from './components/ShopingCart.vue'
+
+const isCheckoutOpen = ref(false)
+
+function openCheckout() {
+  isCheckoutOpen.value = true
+}
+
+function closeCheckout() {
+  isCheckoutOpen.value = false
+}
 </script>
 
 <template>
   <div class="min-h-screen bg-neutral-50">
     <Header />
 
-    <main class="mx-auto max-w-6xl px-5 py-10">
+    <CheckoutWizard v-if="isCheckoutOpen" @close="closeCheckout" />
+
+    <main v-else class="mx-auto max-w-6xl px-5 py-10">
       <section class="grid gap-6 md:grid-cols-[1.1fr_0.9fr] md:items-center">
         <div>
           <p class="text-sm font-semibold uppercase text-emerald-700">
@@ -44,6 +59,6 @@ import ShopingCart from './components/ShopingCart.vue'
       </section>
     </main>
 
-    <ShopingCart />
+    <ShopingCart @checkout="openCheckout" />
   </div>
 </template>
