@@ -117,7 +117,7 @@ function itemLastUpdated(item) {
 }
 
 function isLowStock(item) {
-  return itemQuantity(item) <= itemThreshold(item)
+  return itemQuantity(item) < itemThreshold(item)
 }
 
 function syncQuantityDrafts(items) {
