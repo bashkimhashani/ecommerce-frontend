@@ -1,6 +1,8 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 
+const emit = defineEmits(['view-order'])
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 const statusTabs = [
@@ -207,6 +209,14 @@ onMounted(loadOrders)
               </dd>
             </div>
           </dl>
+
+          <button
+            class="h-10 rounded-md border border-neutral-300 px-4 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
+            type="button"
+            @click="emit('view-order', order.order_number)"
+          >
+            View details
+          </button>
         </div>
       </li>
     </ul>

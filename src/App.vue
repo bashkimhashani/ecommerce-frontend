@@ -3,11 +3,13 @@ import { ref } from 'vue'
 
 import CheckoutWizard from './components/CheckoutWizard.vue'
 import Header from './components/Header.vue'
+import OrderDetail from './components/OrderDetail.vue'
 import OrderHistory from './components/OrderHistory.vue'
 import ShopingCart from './components/ShopingCart.vue'
 
 const isCheckoutOpen = ref(false)
 const currentView = ref('store')
+const selectedOrderNumber = ref('')
 
 function openCheckout() {
   isCheckoutOpen.value = true
@@ -24,17 +26,34 @@ function showStore() {
 
 function showOrders() {
   isCheckoutOpen.value = false
+  selectedOrderNumber.value = ''
   currentView.value = 'orders'
+}
+
+function showOrderDetail(orderNumber) {
+  isCheckoutOpen.value = false
+  selectedOrderNumber.value = orderNumber
+  currentView.value = 'order-detail'
 }
 </script>
 
 <template>
   <div class="min-h-screen bg-neutral-50">
-    <Header :active-view="currentView" @show-store="showStore" @show-orders="showOrders" />
+    <Header
+      :active-view="currentView === 'order-detail' ? 'orders' : currentView"
+      @show-store="showStore"
+      @show-orders="showOrders"
+    />
 
     <CheckoutWizard v-if="isCheckoutOpen" @close="closeCheckout" />
 
-    <OrderHistory v-else-if="currentView === 'orders'" />
+    <OrderHistory v-else-if="currentView === 'orders'" @view-order="showOrderDetail" />
+
+    <OrderDetail
+      v-else-if="currentView === 'order-detail'"
+      :order-number="selectedOrderNumber"
+      @back="showOrders"
+    />
 
     <main v-else class="mx-auto max-w-6xl px-5 py-10">
       <section class="grid gap-6 md:grid-cols-[1.1fr_0.9fr] md:items-center">
