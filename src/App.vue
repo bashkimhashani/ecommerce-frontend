@@ -3,9 +3,11 @@ import { ref } from 'vue'
 
 import CheckoutWizard from './components/CheckoutWizard.vue'
 import Header from './components/Header.vue'
+import OrderHistory from './components/OrderHistory.vue'
 import ShopingCart from './components/ShopingCart.vue'
 
 const isCheckoutOpen = ref(false)
+const currentView = ref('store')
 
 function openCheckout() {
   isCheckoutOpen.value = true
@@ -14,13 +16,25 @@ function openCheckout() {
 function closeCheckout() {
   isCheckoutOpen.value = false
 }
+
+function showStore() {
+  isCheckoutOpen.value = false
+  currentView.value = 'store'
+}
+
+function showOrders() {
+  isCheckoutOpen.value = false
+  currentView.value = 'orders'
+}
 </script>
 
 <template>
   <div class="min-h-screen bg-neutral-50">
-    <Header />
+    <Header :active-view="currentView" @show-store="showStore" @show-orders="showOrders" />
 
     <CheckoutWizard v-if="isCheckoutOpen" @close="closeCheckout" />
+
+    <OrderHistory v-else-if="currentView === 'orders'" />
 
     <main v-else class="mx-auto max-w-6xl px-5 py-10">
       <section class="grid gap-6 md:grid-cols-[1.1fr_0.9fr] md:items-center">
@@ -59,6 +73,6 @@ function closeCheckout() {
       </section>
     </main>
 
-    <ShopingCart @checkout="openCheckout" />
+    <ShopingCart v-if="!isCheckoutOpen" @checkout="openCheckout" />
   </div>
 </template>
