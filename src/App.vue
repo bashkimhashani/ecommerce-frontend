@@ -1,15 +1,21 @@
 <script setup>
 import { ref } from 'vue'
 
+import CategoryTree from './components/CategoryTree.vue'
 import CheckoutWizard from './components/CheckoutWizard.vue'
 import Header from './components/Header.vue'
 import OrderDetail from './components/OrderDetail.vue'
 import OrderHistory from './components/OrderHistory.vue'
+import ProductDetailPage from './components/ProductDetailPage.vue'
+import ProductListingPage from './components/ProductListingPage.vue'
 import ShopingCart from './components/ShopingCart.vue'
+import VendorDashboard from './components/VendorDashboard.vue'
 
 const isCheckoutOpen = ref(false)
-const currentView = ref('store')
+const selectedCategory = ref(null)
 const selectedOrderNumber = ref('')
+const selectedProductSlug = ref('')
+const activeView = ref('catalog')
 
 function openCheckout() {
   isCheckoutOpen.value = true
@@ -19,78 +25,74 @@ function closeCheckout() {
   isCheckoutOpen.value = false
 }
 
-function showStore() {
+function showCatalog() {
   isCheckoutOpen.value = false
-  currentView.value = 'store'
+  selectedOrderNumber.value = ''
+  activeView.value = 'catalog'
+}
+
+function showVendor() {
+  isCheckoutOpen.value = false
+  selectedOrderNumber.value = ''
+  activeView.value = 'vendor'
 }
 
 function showOrders() {
   isCheckoutOpen.value = false
   selectedOrderNumber.value = ''
-  currentView.value = 'orders'
+  activeView.value = 'orders'
 }
 
 function showOrderDetail(orderNumber) {
   isCheckoutOpen.value = false
   selectedOrderNumber.value = orderNumber
-  currentView.value = 'order-detail'
+  activeView.value = 'order-detail'
+}
+
+function selectCategory(category) {
+  selectedCategory.value = category
+  selectedProductSlug.value = ''
+  activeView.value = 'catalog'
 }
 </script>
 
 <template>
-  <div class="min-h-screen bg-neutral-50">
+  <div class="min-h-screen bg-slate-50 text-slate-950">
     <Header
-      :active-view="currentView === 'order-detail' ? 'orders' : currentView"
-      @show-store="showStore"
+      :active-view="activeView === 'order-detail' ? 'orders' : activeView"
+      @show-catalog="showCatalog"
+      @show-vendor="showVendor"
       @show-orders="showOrders"
     />
 
     <CheckoutWizard v-if="isCheckoutOpen" @close="closeCheckout" />
 
-    <OrderHistory v-else-if="currentView === 'orders'" @view-order="showOrderDetail" />
+    <OrderHistory v-else-if="activeView === 'orders'" @view-order="showOrderDetail" />
 
     <OrderDetail
-      v-else-if="currentView === 'order-detail'"
+      v-else-if="activeView === 'order-detail'"
       :order-number="selectedOrderNumber"
       @back="showOrders"
     />
 
-    <main v-else class="mx-auto max-w-6xl px-5 py-10">
-      <section class="grid gap-6 md:grid-cols-[1.1fr_0.9fr] md:items-center">
-        <div>
-          <p class="text-sm font-semibold uppercase text-emerald-700">
-            Vendora Tech
-          </p>
-          <h1 class="mt-3 max-w-2xl text-4xl font-bold text-neutral-950">
-            New gear for work, gaming, and everything between
-          </h1>
-          <p class="mt-4 max-w-2xl text-base leading-7 text-neutral-600">
-            Laptops, components, networking gear, and peripherals from trusted brands.
-          </p>
-        </div>
-
-        <div class="rounded-md border border-neutral-200 bg-white p-5 shadow-sm">
-          <div class="grid grid-cols-2 gap-3 text-sm">
-            <div class="rounded-md bg-neutral-100 p-3">
-              <p class="font-semibold text-neutral-950">Gaming laptops</p>
-              <p class="mt-1 text-neutral-500">RTX builds in stock</p>
-            </div>
-            <div class="rounded-md bg-neutral-100 p-3">
-              <p class="font-semibold text-neutral-950">PC parts</p>
-              <p class="mt-1 text-neutral-500">CPUs, GPUs, memory</p>
-            </div>
-            <div class="rounded-md bg-neutral-100 p-3">
-              <p class="font-semibold text-neutral-950">Networking</p>
-              <p class="mt-1 text-neutral-500">Routers and switches</p>
-            </div>
-            <div class="rounded-md bg-neutral-100 p-3">
-              <p class="font-semibold text-neutral-950">Peripherals</p>
-              <p class="mt-1 text-neutral-500">Keyboards and displays</p>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
+    <div v-else class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white">
+      <main class="flex min-h-[calc(100vh-81px)] w-full bg-white">
+        <VendorDashboard v-if="activeView === 'vendor'" />
+        <template v-else>
+          <CategoryTree @select="selectCategory" />
+          <ProductDetailPage
+            v-if="selectedProductSlug"
+            :slug="selectedProductSlug"
+            @back="selectedProductSlug = ''"
+          />
+          <ProductListingPage
+            v-else
+            :selected-category="selectedCategory"
+            @view-product="selectedProductSlug = $event"
+          />
+        </template>
+      </main>
+    </div>
 
     <ShopingCart v-if="!isCheckoutOpen" @checkout="openCheckout" />
   </div>
