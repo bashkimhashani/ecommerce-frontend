@@ -2,14 +2,52 @@
 import { ref } from 'vue'
 
 import CategoryTree from './components/CategoryTree.vue'
+import CheckoutWizard from './components/CheckoutWizard.vue'
 import Header from './components/Header.vue'
+import OrderDetail from './components/OrderDetail.vue'
+import OrderHistory from './components/OrderHistory.vue'
 import ProductDetailPage from './components/ProductDetailPage.vue'
 import ProductListingPage from './components/ProductListingPage.vue'
+import ShopingCart from './components/ShopingCart.vue'
 import VendorDashboard from './components/VendorDashboard.vue'
 
+const isCheckoutOpen = ref(false)
 const selectedCategory = ref(null)
+const selectedOrderNumber = ref('')
 const selectedProductSlug = ref('')
 const activeView = ref('catalog')
+
+function openCheckout() {
+  isCheckoutOpen.value = true
+}
+
+function closeCheckout() {
+  isCheckoutOpen.value = false
+}
+
+function showCatalog() {
+  isCheckoutOpen.value = false
+  selectedOrderNumber.value = ''
+  activeView.value = 'catalog'
+}
+
+function showVendor() {
+  isCheckoutOpen.value = false
+  selectedOrderNumber.value = ''
+  activeView.value = 'vendor'
+}
+
+function showOrders() {
+  isCheckoutOpen.value = false
+  selectedOrderNumber.value = ''
+  activeView.value = 'orders'
+}
+
+function showOrderDetail(orderNumber) {
+  isCheckoutOpen.value = false
+  selectedOrderNumber.value = orderNumber
+  activeView.value = 'order-detail'
+}
 
 function selectCategory(category) {
   selectedCategory.value = category
@@ -20,31 +58,25 @@ function selectCategory(category) {
 
 <template>
   <div class="min-h-screen bg-slate-50 text-slate-950">
-    <Header />
+    <Header
+      :active-view="activeView === 'order-detail' ? 'orders' : activeView"
+      @show-catalog="showCatalog"
+      @show-vendor="showVendor"
+      @show-orders="showOrders"
+    />
 
-    <div class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white">
-      <div class="flex justify-end border-b border-slate-200 px-4 py-3">
-        <div class="inline-flex rounded-md border border-slate-200 bg-slate-50 p-1">
-          <button
-            type="button"
-            class="rounded px-3 py-1.5 text-sm font-semibold"
-            :class="activeView === 'catalog' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
-            @click="activeView = 'catalog'"
-          >
-            Catalog
-          </button>
-          <button
-            type="button"
-            class="rounded px-3 py-1.5 text-sm font-semibold"
-            :class="activeView === 'vendor' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
-            @click="activeView = 'vendor'"
-          >
-            Vendor
-          </button>
-        </div>
-      </div>
+    <CheckoutWizard v-if="isCheckoutOpen" @close="closeCheckout" />
 
-      <main class="flex min-h-[calc(100vh-137px)] w-full bg-white">
+    <OrderHistory v-else-if="activeView === 'orders'" @view-order="showOrderDetail" />
+
+    <OrderDetail
+      v-else-if="activeView === 'order-detail'"
+      :order-number="selectedOrderNumber"
+      @back="showOrders"
+    />
+
+    <div v-else class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white">
+      <main class="flex min-h-[calc(100vh-81px)] w-full bg-white">
         <VendorDashboard v-if="activeView === 'vendor'" />
         <template v-else>
           <CategoryTree @select="selectCategory" />
@@ -61,5 +93,7 @@ function selectCategory(category) {
         </template>
       </main>
     </div>
+
+    <ShopingCart v-if="!isCheckoutOpen" @checkout="openCheckout" />
   </div>
 </template>
