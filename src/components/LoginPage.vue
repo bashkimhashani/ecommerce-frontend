@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
-const emit = defineEmits(['forgot-password', 'login-success'])
+const emit = defineEmits(['login-success'])
 
 const email = ref('')
 const password = ref('')
@@ -152,14 +152,6 @@ async function submitLogin() {
             :disabled="isSubmitting"
           >
             {{ isSubmitting ? 'Signing in...' : 'Sign in' }}
-          </button>
-
-          <button
-            type="button"
-            class="mt-4 text-sm font-semibold text-slate-600 transition hover:text-slate-950"
-            @click="emit('forgot-password')"
-          >
-            Forgot password?
           </button>
         </form>
       </div>
