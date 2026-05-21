@@ -4,6 +4,7 @@ import { ref } from 'vue'
 import CategoryTree from './components/CategoryTree.vue'
 import CheckoutWizard from './components/CheckoutWizard.vue'
 import Header from './components/Header.vue'
+import LoginPage from './components/LoginPage.vue'
 import OrderDetail from './components/OrderDetail.vue'
 import OrderHistory from './components/OrderHistory.vue'
 import ProductDetailPage from './components/ProductDetailPage.vue'
@@ -44,6 +45,13 @@ function showOrders() {
   activeView.value = 'orders'
 }
 
+function showLogin() {
+  isCheckoutOpen.value = false
+  selectedOrderNumber.value = ''
+  selectedProductSlug.value = ''
+  activeView.value = 'login'
+}
+
 function showRegister() {
   isCheckoutOpen.value = false
   selectedOrderNumber.value = ''
@@ -52,6 +60,10 @@ function showRegister() {
 }
 
 function handleRegisterSuccess() {
+  showCatalog()
+}
+
+function handleLoginSuccess() {
   showCatalog()
 }
 
@@ -75,10 +87,13 @@ function selectCategory(category) {
       @show-catalog="showCatalog"
       @show-vendor="showVendor"
       @show-orders="showOrders"
+      @show-login="showLogin"
       @show-register="showRegister"
     />
 
     <CheckoutWizard v-if="isCheckoutOpen" @close="closeCheckout" />
+
+    <LoginPage v-else-if="activeView === 'login'" @login-success="handleLoginSuccess" />
 
     <RegisterPage v-else-if="activeView === 'register'" @register-success="handleRegisterSuccess" />
 
