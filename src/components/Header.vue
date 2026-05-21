@@ -14,6 +14,7 @@ const emit = defineEmits([
   'show-vendor',
   'show-orders',
   'show-login',
+  'show-register',
 ])
 </script>
 
@@ -62,6 +63,14 @@ const emit = defineEmits([
             @click="emit('show-login')"
           >
             Login
+          </button>
+          <button
+            type="button"
+            class="rounded px-3 py-1.5 text-sm font-semibold transition"
+            :class="activeView === 'register' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+            @click="emit('show-register')"
+          >
+            Register
           </button>
         </div>
       </div>
