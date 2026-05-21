@@ -8,6 +8,7 @@ import OrderDetail from './components/OrderDetail.vue'
 import OrderHistory from './components/OrderHistory.vue'
 import ProductDetailPage from './components/ProductDetailPage.vue'
 import ProductListingPage from './components/ProductListingPage.vue'
+import RegisterPage from './components/RegisterPage.vue'
 import ShopingCart from './components/ShopingCart.vue'
 import VendorDashboard from './components/VendorDashboard.vue'
 
@@ -43,6 +44,17 @@ function showOrders() {
   activeView.value = 'orders'
 }
 
+function showRegister() {
+  isCheckoutOpen.value = false
+  selectedOrderNumber.value = ''
+  selectedProductSlug.value = ''
+  activeView.value = 'register'
+}
+
+function handleRegisterSuccess() {
+  showCatalog()
+}
+
 function showOrderDetail(orderNumber) {
   isCheckoutOpen.value = false
   selectedOrderNumber.value = orderNumber
@@ -63,9 +75,12 @@ function selectCategory(category) {
       @show-catalog="showCatalog"
       @show-vendor="showVendor"
       @show-orders="showOrders"
+      @show-register="showRegister"
     />
 
     <CheckoutWizard v-if="isCheckoutOpen" @close="closeCheckout" />
+
+    <RegisterPage v-else-if="activeView === 'register'" @register-success="handleRegisterSuccess" />
 
     <OrderHistory v-else-if="activeView === 'orders'" @view-order="showOrderDetail" />
 
