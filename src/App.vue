@@ -1,5 +1,6 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import CategoryTree from './components/CategoryTree.vue'
 import CheckoutWizard from './components/CheckoutWizard.vue'
@@ -15,23 +16,22 @@ import ResetPasswordPage from './components/ResetPasswordPage.vue'
 import ShopingCart from './components/ShopingCart.vue'
 import VendorDashboard from './components/VendorDashboard.vue'
 
+const route = useRoute()
+const router = useRouter()
 const isCheckoutOpen = ref(false)
 const selectedCategory = ref(null)
-const selectedOrderNumber = ref('')
 const selectedProductSlug = ref('')
-const resetPasswordUid = ref('')
-const resetPasswordToken = ref('')
-const initialResetParams = new URLSearchParams(window.location.search)
-const activeView = ref(
-  initialResetParams.has('uid') && initialResetParams.has('token')
-    ? 'reset-password'
-    : 'catalog',
-)
 
-if (activeView.value === 'reset-password') {
-  resetPasswordUid.value = initialResetParams.get('uid') || ''
-  resetPasswordToken.value = initialResetParams.get('token') || ''
-}
+const activeView = computed(() => {
+  if (route.query.uid && route.query.token) {
+    return 'reset-password'
+  }
+
+  return route.meta.activeView || 'catalog'
+})
+const selectedOrderNumber = computed(() => String(route.params.orderNumber || ''))
+const resetPasswordUid = computed(() => String(route.query.uid || ''))
+const resetPasswordToken = computed(() => String(route.query.token || ''))
 
 function openCheckout() {
   isCheckoutOpen.value = true
@@ -43,41 +43,38 @@ function closeCheckout() {
 
 function showCatalog() {
   isCheckoutOpen.value = false
-  selectedOrderNumber.value = ''
-  activeView.value = 'catalog'
+  selectedProductSlug.value = ''
+  router.push({ name: 'catalog' })
 }
 
 function showVendor() {
   isCheckoutOpen.value = false
-  selectedOrderNumber.value = ''
-  activeView.value = 'vendor'
+  selectedProductSlug.value = ''
+  router.push({ name: 'vendor' })
 }
 
 function showOrders() {
   isCheckoutOpen.value = false
-  selectedOrderNumber.value = ''
-  activeView.value = 'orders'
+  selectedProductSlug.value = ''
+  router.push({ name: 'orders' })
 }
 
 function showLogin() {
   isCheckoutOpen.value = false
-  selectedOrderNumber.value = ''
   selectedProductSlug.value = ''
-  activeView.value = 'login'
+  router.push({ name: 'login' })
 }
 
 function showForgotPassword() {
   isCheckoutOpen.value = false
-  selectedOrderNumber.value = ''
   selectedProductSlug.value = ''
-  activeView.value = 'forgot-password'
+  router.push({ name: 'forgot-password' })
 }
 
 function showRegister() {
   isCheckoutOpen.value = false
-  selectedOrderNumber.value = ''
   selectedProductSlug.value = ''
-  activeView.value = 'register'
+  router.push({ name: 'register' })
 }
 
 function handleRegisterSuccess() {
@@ -85,19 +82,26 @@ function handleRegisterSuccess() {
 }
 
 function handleLoginSuccess() {
+  const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : ''
+
+  if (redirect.startsWith('/')) {
+    router.push(redirect)
+    return
+  }
+
   showCatalog()
 }
 
 function showOrderDetail(orderNumber) {
   isCheckoutOpen.value = false
-  selectedOrderNumber.value = orderNumber
-  activeView.value = 'order-detail'
+  selectedProductSlug.value = ''
+  router.push({ name: 'order-detail', params: { orderNumber } })
 }
 
 function selectCategory(category) {
   selectedCategory.value = category
   selectedProductSlug.value = ''
-  activeView.value = 'catalog'
+  router.push({ name: 'catalog' })
 }
 </script>
 
