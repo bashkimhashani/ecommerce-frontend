@@ -1,9 +1,11 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
+import { useAuthStore } from '../stores/authStore'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 const emit = defineEmits(['register-success'])
+const authStore = useAuthStore()
 
 const form = reactive({
   firstName: '',
@@ -84,16 +86,6 @@ function parseRegisterError(payload) {
   return 'Could not create your account.'
 }
 
-function storeSession(payload) {
-  localStorage.setItem('accessToken', payload.access)
-  localStorage.setItem('refreshToken', payload.refresh)
-  localStorage.setItem('access', payload.access)
-  localStorage.setItem('refresh', payload.refresh)
-  if (payload.user) {
-    localStorage.setItem('currentUser', JSON.stringify(payload.user))
-  }
-}
-
 async function submitRegistration() {
   touchAllFields()
   errorMessage.value = ''
@@ -126,7 +118,7 @@ async function submitRegistration() {
       throw new Error(parseRegisterError(payload))
     }
 
-    storeSession(payload)
+    authStore.setSession(payload)
     successMessage.value = 'Account created successfully.'
     emit('register-success', payload.user)
   } catch (error) {
