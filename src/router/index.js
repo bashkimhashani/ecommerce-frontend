@@ -53,6 +53,12 @@ const routes = [
     meta: { activeView: 'register' },
   },
   {
+    path: '/tenant/register',
+    name: 'tenant-register',
+    component: RouteShell,
+    meta: { activeView: 'tenant-register' },
+  },
+  {
     path: '/forgot-password',
     name: 'forgot-password',
     component: RouteShell,

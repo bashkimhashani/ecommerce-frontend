@@ -14,6 +14,7 @@ import ProductListingPage from './components/ProductListingPage.vue'
 import RegisterPage from './components/RegisterPage.vue'
 import ResetPasswordPage from './components/ResetPasswordPage.vue'
 import ShopingCart from './components/ShopingCart.vue'
+import TenantRegistrationPage from './components/TenantRegistrationPage.vue'
 import VendorDashboard from './components/VendorDashboard.vue'
 
 const route = useRoute()
@@ -77,8 +78,18 @@ function showRegister() {
   router.push({ name: 'register' })
 }
 
+function showTenantRegister() {
+  isCheckoutOpen.value = false
+  selectedProductSlug.value = ''
+  router.push({ name: 'tenant-register' })
+}
+
 function handleRegisterSuccess() {
   showCatalog()
+}
+
+function handleTenantRegisterSuccess() {
+  router.push({ name: 'vendor' })
 }
 
 function handleLoginSuccess() {
@@ -114,6 +125,7 @@ function selectCategory(category) {
       @show-orders="showOrders"
       @show-login="showLogin"
       @show-register="showRegister"
+      @show-tenant-register="showTenantRegister"
     />
 
     <CheckoutWizard v-if="isCheckoutOpen" @close="closeCheckout" />
@@ -137,6 +149,11 @@ function selectCategory(category) {
     />
 
     <RegisterPage v-else-if="activeView === 'register'" @register-success="handleRegisterSuccess" />
+
+    <TenantRegistrationPage
+      v-else-if="activeView === 'tenant-register'"
+      @tenant-register-success="handleTenantRegisterSuccess"
+    />
 
     <OrderHistory v-else-if="activeView === 'orders'" @view-order="showOrderDetail" />
 
