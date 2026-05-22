@@ -1,4 +1,7 @@
 <script setup>
+import { computed } from 'vue'
+import { usePermission } from '../composables/usePermission'
+import { useAuthStore } from '../stores/authStore'
 import NavigationBar from './NavigationBar.vue'
 import SearchBar from './SearchBar.vue'
 
@@ -16,6 +19,17 @@ const emit = defineEmits([
   'show-login',
   'show-register',
 ])
+
+const authStore = useAuthStore()
+const { can } = usePermission()
+
+const canViewVendor = computed(() => (
+  can('read', 'vendor') ||
+  can('manage', 'vendor') ||
+  can('read', 'inventory')
+))
+const canViewOrders = computed(() => authStore.role === 'customer' && can('read', 'order'))
+const showAuthLinks = computed(() => !authStore.isAuthenticated)
 </script>
 
 <template>
@@ -41,6 +55,7 @@ const emit = defineEmits([
             Catalog
           </button>
           <button
+            v-if="canViewVendor"
             type="button"
             class="rounded px-3 py-1.5 text-sm font-semibold transition"
             :class="activeView === 'vendor' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
@@ -49,6 +64,7 @@ const emit = defineEmits([
             Vendor
           </button>
           <button
+            v-if="canViewOrders"
             type="button"
             class="rounded px-3 py-1.5 text-sm font-semibold transition"
             :class="activeView === 'orders' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
@@ -57,6 +73,7 @@ const emit = defineEmits([
             Orders
           </button>
           <button
+            v-if="showAuthLinks"
             type="button"
             class="rounded px-3 py-1.5 text-sm font-semibold transition"
             :class="activeView === 'login' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
@@ -65,6 +82,7 @@ const emit = defineEmits([
             Login
           </button>
           <button
+            v-if="showAuthLinks"
             type="button"
             class="rounded px-3 py-1.5 text-sm font-semibold transition"
             :class="activeView === 'register' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
