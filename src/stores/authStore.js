@@ -69,6 +69,22 @@ export const useAuthStore = defineStore('auth', {
         localStorage.removeItem('role')
       }
     },
+    updateUser(user) {
+      this.user = user || null
+      this.role = user ? getUserRole(user) : ''
+
+      if (user) {
+        localStorage.setItem('currentUser', JSON.stringify(user))
+      } else {
+        localStorage.removeItem('currentUser')
+      }
+
+      if (this.role) {
+        localStorage.setItem('role', this.role)
+      } else {
+        localStorage.removeItem('role')
+      }
+    },
     clearSession() {
       this.user = null
       this.accessToken = ''

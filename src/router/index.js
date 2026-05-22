@@ -41,6 +41,15 @@ const routes = [
     },
   },
   {
+    path: '/profile',
+    name: 'profile',
+    component: RouteShell,
+    meta: {
+      activeView: 'profile',
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/login',
     name: 'login',
     component: RouteShell,
