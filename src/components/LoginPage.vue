@@ -1,9 +1,11 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { useAuthStore } from '../stores/authStore'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 const emit = defineEmits(['forgot-password', 'login-success'])
+const authStore = useAuthStore()
 
 const email = ref('')
 const password = ref('')
@@ -58,16 +60,7 @@ async function submitLogin() {
       throw new Error(parseLoginError(payload))
     }
 
-    localStorage.setItem('accessToken', payload.access)
-    localStorage.setItem('refreshToken', payload.refresh)
-    localStorage.setItem('access', payload.access)
-    localStorage.setItem('refresh', payload.refresh)
-    if (payload.user) {
-      localStorage.setItem('currentUser', JSON.stringify(payload.user))
-    } else {
-      localStorage.removeItem('currentUser')
-    }
-
+    authStore.setSession(payload)
     emit('login-success', payload.user)
   } catch (error) {
     errorMessage.value = error.message || 'Could not sign in right now.'
