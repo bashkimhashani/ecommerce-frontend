@@ -16,6 +16,7 @@ const emit = defineEmits([
   'show-catalog',
   'show-vendor',
   'show-orders',
+  'show-profile',
   'show-login',
   'show-register',
   'show-tenant-register',
@@ -31,6 +32,16 @@ const canViewVendor = computed(() => (
 ))
 const canViewOrders = computed(() => authStore.role === 'customer' && can('read', 'order'))
 const showAuthLinks = computed(() => !authStore.isAuthenticated)
+const profileImage = computed(() => (
+  authStore.user?.avatar_thumbnail ||
+  authStore.user?.avatar ||
+  ''
+))
+const profileInitials = computed(() => {
+  const firstInitial = authStore.user?.first_name?.charAt(0) || ''
+  const lastInitial = authStore.user?.last_name?.charAt(0) || ''
+  return `${firstInitial}${lastInitial}`.toUpperCase() || 'U'
+})
 </script>
 
 <template>
@@ -72,6 +83,23 @@ const showAuthLinks = computed(() => !authStore.isAuthenticated)
             @click="emit('show-orders')"
           >
             Orders
+          </button>
+          <button
+            v-if="authStore.isAuthenticated"
+            type="button"
+            class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border text-xs font-semibold transition"
+            :class="activeView === 'profile' ? 'border-slate-950 bg-slate-950 text-white shadow-sm' : 'border-slate-300 bg-white text-slate-700 hover:border-slate-950 hover:text-slate-950'"
+            aria-label="Edit profile"
+            title="Edit profile"
+            @click="emit('show-profile')"
+          >
+            <img
+              v-if="profileImage"
+              class="h-full w-full object-cover"
+              :src="profileImage"
+              alt=""
+            >
+            <span v-else>{{ profileInitials }}</span>
           </button>
           <button
             v-if="showAuthLinks"

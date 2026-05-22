@@ -9,6 +9,7 @@ import Header from './components/Header.vue'
 import LoginPage from './components/LoginPage.vue'
 import OrderDetail from './components/OrderDetail.vue'
 import OrderHistory from './components/OrderHistory.vue'
+import ProfileEditPage from './components/ProfileEditPage.vue'
 import ProductDetailPage from './components/ProductDetailPage.vue'
 import ProductListingPage from './components/ProductListingPage.vue'
 import RegisterPage from './components/RegisterPage.vue'
@@ -58,6 +59,12 @@ function showOrders() {
   isCheckoutOpen.value = false
   selectedProductSlug.value = ''
   router.push({ name: 'orders' })
+}
+
+function showProfile() {
+  isCheckoutOpen.value = false
+  selectedProductSlug.value = ''
+  router.push({ name: 'profile' })
 }
 
 function showLogin() {
@@ -123,6 +130,7 @@ function selectCategory(category) {
       @show-catalog="showCatalog"
       @show-vendor="showVendor"
       @show-orders="showOrders"
+      @show-profile="showProfile"
       @show-login="showLogin"
       @show-register="showRegister"
       @show-tenant-register="showTenantRegister"
@@ -156,6 +164,8 @@ function selectCategory(category) {
     />
 
     <OrderHistory v-else-if="activeView === 'orders'" @view-order="showOrderDetail" />
+
+    <ProfileEditPage v-else-if="activeView === 'profile'" />
 
     <OrderDetail
       v-else-if="activeView === 'order-detail'"
