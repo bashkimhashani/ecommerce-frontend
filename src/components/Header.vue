@@ -18,6 +18,7 @@ const emit = defineEmits([
   'show-orders',
   'show-login',
   'show-register',
+  'show-tenant-register',
 ])
 
 const authStore = useAuthStore()
@@ -71,6 +72,15 @@ const showAuthLinks = computed(() => !authStore.isAuthenticated)
             @click="emit('show-orders')"
           >
             Orders
+          </button>
+          <button
+            v-if="showAuthLinks"
+            type="button"
+            class="rounded px-3 py-1.5 text-sm font-semibold transition"
+            :class="activeView === 'tenant-register' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+            @click="emit('show-tenant-register')"
+          >
+            Start selling
           </button>
           <button
             v-if="showAuthLinks"
