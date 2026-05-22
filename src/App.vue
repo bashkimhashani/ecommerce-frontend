@@ -3,6 +3,7 @@ import { ref } from 'vue'
 
 import CategoryTree from './components/CategoryTree.vue'
 import CheckoutWizard from './components/CheckoutWizard.vue'
+import ForgotPasswordPage from './components/ForgotPasswordPage.vue'
 import Header from './components/Header.vue'
 import LoginPage from './components/LoginPage.vue'
 import OrderDetail from './components/OrderDetail.vue'
@@ -10,6 +11,7 @@ import OrderHistory from './components/OrderHistory.vue'
 import ProductDetailPage from './components/ProductDetailPage.vue'
 import ProductListingPage from './components/ProductListingPage.vue'
 import RegisterPage from './components/RegisterPage.vue'
+import ResetPasswordPage from './components/ResetPasswordPage.vue'
 import ShopingCart from './components/ShopingCart.vue'
 import VendorDashboard from './components/VendorDashboard.vue'
 
@@ -17,7 +19,19 @@ const isCheckoutOpen = ref(false)
 const selectedCategory = ref(null)
 const selectedOrderNumber = ref('')
 const selectedProductSlug = ref('')
-const activeView = ref('catalog')
+const resetPasswordUid = ref('')
+const resetPasswordToken = ref('')
+const initialResetParams = new URLSearchParams(window.location.search)
+const activeView = ref(
+  initialResetParams.has('uid') && initialResetParams.has('token')
+    ? 'reset-password'
+    : 'catalog',
+)
+
+if (activeView.value === 'reset-password') {
+  resetPasswordUid.value = initialResetParams.get('uid') || ''
+  resetPasswordToken.value = initialResetParams.get('token') || ''
+}
 
 function openCheckout() {
   isCheckoutOpen.value = true
@@ -50,6 +64,13 @@ function showLogin() {
   selectedOrderNumber.value = ''
   selectedProductSlug.value = ''
   activeView.value = 'login'
+}
+
+function showForgotPassword() {
+  isCheckoutOpen.value = false
+  selectedOrderNumber.value = ''
+  selectedProductSlug.value = ''
+  activeView.value = 'forgot-password'
 }
 
 function showRegister() {
@@ -93,7 +114,23 @@ function selectCategory(category) {
 
     <CheckoutWizard v-if="isCheckoutOpen" @close="closeCheckout" />
 
-    <LoginPage v-else-if="activeView === 'login'" @login-success="handleLoginSuccess" />
+    <LoginPage
+      v-else-if="activeView === 'login'"
+      @forgot-password="showForgotPassword"
+      @login-success="handleLoginSuccess"
+    />
+
+    <ForgotPasswordPage
+      v-else-if="activeView === 'forgot-password'"
+      @back-to-login="showLogin"
+    />
+
+    <ResetPasswordPage
+      v-else-if="activeView === 'reset-password'"
+      :uid="resetPasswordUid"
+      :token="resetPasswordToken"
+      @back-to-login="showLogin"
+    />
 
     <RegisterPage v-else-if="activeView === 'register'" @register-success="handleRegisterSuccess" />
 
