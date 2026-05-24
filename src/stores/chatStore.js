@@ -61,6 +61,7 @@ export const useChatStore = defineStore('chat', {
           role: 'assistant',
           content: data.message,
           usedFallback: Boolean(data.used_fallback),
+          products: Array.isArray(data.products) ? data.products : [],
         })
       } catch (error) {
         this.error = error.message || 'Could not send your message.'
@@ -68,6 +69,7 @@ export const useChatStore = defineStore('chat', {
           role: 'assistant',
           content: this.error,
           usedFallback: true,
+          products: [],
         })
       } finally {
         this.isLoading = false
