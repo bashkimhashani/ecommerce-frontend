@@ -56,7 +56,7 @@ const profileInitials = computed(() => {
     <div class="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-4 lg:flex-row lg:items-center">
       <div class="flex items-center justify-between gap-4">
         <button type="button" class="shrink-0" aria-label="Show catalog" @click="emit('show-catalog')">
-          <img class="h-10 w-auto mix-blend-multiply dark:mix-blend-screen" src="../assets/images/logo.png" alt="Vendora">
+          <img class="h-10 w-auto" src="../assets/images/logo.png" alt="Vendora">
         </button>
       </div>
 
