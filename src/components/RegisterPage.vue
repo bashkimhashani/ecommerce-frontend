@@ -13,7 +13,6 @@ const form = reactive({
   email: '',
   password: '',
   confirmPassword: '',
-  role: 'customer',
 })
 const touched = reactive({
   firstName: false,
@@ -71,7 +70,7 @@ function touchAllFields() {
 }
 
 function parseRegisterError(payload) {
-  const fieldErrors = ['email', 'first_name', 'last_name', 'password', 'role']
+  const fieldErrors = ['email', 'first_name', 'last_name', 'password']
   for (const field of fieldErrors) {
     if (payload?.[field]?.length) {
       return payload[field][0]
@@ -109,7 +108,7 @@ async function submitRegistration() {
         first_name: form.firstName.trim(),
         last_name: form.lastName.trim(),
         password: form.password,
-        role: form.role,
+        role: 'customer',
       }),
     })
     const payload = await response.json().catch(() => ({}))
@@ -136,10 +135,10 @@ async function submitRegistration() {
         <div>
           <p class="text-sm font-semibold uppercase text-emerald-700">Create account</p>
           <h1 class="mt-4 max-w-2xl text-4xl font-semibold text-slate-950">
-            Start shopping or managing your store in Vendora.
+            Start shopping with a secure Vendora account.
           </h1>
           <p class="mt-4 max-w-xl text-base leading-7 text-slate-600">
-            Register with your email and choose the account type that matches your role.
+            Register with your email to save carts, orders, and account details.
           </p>
         </div>
 
@@ -153,8 +152,8 @@ async function submitRegistration() {
             <dd class="mt-1">Inline checks before submit.</dd>
           </div>
           <div class="border-t border-slate-200 pt-4">
-            <dt class="font-semibold text-slate-950">Flexible</dt>
-            <dd class="mt-1">Customer or vendor access.</dd>
+            <dt class="font-semibold text-slate-950">Ready</dt>
+            <dd class="mt-1">Vendor onboarding has its own business flow.</dd>
           </div>
         </dl>
       </div>
@@ -234,18 +233,6 @@ async function submitRegistration() {
           <p v-if="fieldError('email')" class="mt-1 text-xs text-red-600">
             {{ fieldError('email') }}
           </p>
-
-          <label class="mt-5 block text-sm font-medium text-slate-700" for="register-role">
-            Account type
-          </label>
-          <select
-            id="register-role"
-            v-model="form.role"
-            class="mt-2 block w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-950 outline-none transition focus:border-slate-950"
-          >
-            <option value="customer">Customer</option>
-            <option value="vendor_admin">Vendor</option>
-          </select>
 
           <label class="mt-5 block text-sm font-medium text-slate-700" for="register-password">
             Password
