@@ -187,24 +187,25 @@ watch(
         @back="showOrders"
       />
 
-    <div v-else class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white">
-      <main class="flex min-h-[calc(100vh-81px)] w-full bg-white">
-        <VendorDashboard v-if="activeView === 'vendor'" />
-        <template v-else>
-          <CategoryTree @select="selectCategory" />
-          <ProductDetailPage
-            v-if="selectedProductSlug"
-            :slug="selectedProductSlug"
-            @back="showCatalog"
-          />
-          <ProductListingPage
-            v-else
-            :selected-category="selectedCategory"
-            @view-product="showProduct"
-          />
-        </template>
-      </main>
-    </div>
+      <div v-else class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white transition-colors duration-300 dark:border-slate-800 dark:bg-slate-900">
+        <main class="flex min-h-[calc(100vh-153px)] w-full bg-white transition-colors duration-300 dark:bg-slate-900">
+          <VendorDashboard v-if="activeView === 'vendor'" />
+          <template v-else>
+            <CategoryTree @select="selectCategory" />
+            <ProductDetailPage
+              v-if="selectedProductSlug"
+              :slug="selectedProductSlug"
+              @back="showCatalog"
+            />
+            <ProductListingPage
+              v-else
+              :selected-category="selectedCategory"
+              @view-product="showProduct"
+            />
+          </template>
+        </main>
+      </div>
+    </Transition>
 
     <ShopingCart v-if="!isCheckoutOpen" @checkout="openCheckout" />
     <ChatWidget @view-product="openProductFromChat" />
