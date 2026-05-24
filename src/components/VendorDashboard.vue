@@ -1,6 +1,8 @@
 <script setup>
 import { Chart, ArcElement, DoughnutController, Legend, Tooltip } from 'chart.js'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import AIInsightsPanel from './AIInsightsPanel.vue'
+import AnalyticsChat from './AnalyticsChat.vue'
 
 Chart.register(ArcElement, DoughnutController, Legend, Tooltip)
 
@@ -22,6 +24,7 @@ const inventoryError = ref('')
 const orderSummaryError = ref('')
 const savedItemId = ref(null)
 const savingItemId = ref(null)
+const aiRefreshKey = ref(0)
 const orderChartCanvas = ref(null)
 let orderChart = null
 
@@ -319,6 +322,7 @@ async function fetchOrderSummary() {
 }
 
 async function refreshDashboard() {
+  aiRefreshKey.value += 1
   await Promise.all([
     fetchSummary(),
     fetchInventory(),
@@ -419,6 +423,11 @@ onBeforeUnmount(() => {
     >
       {{ summaryError }}
     </p>
+
+    <div class="mb-5 grid gap-4 lg:grid-cols-2">
+      <AIInsightsPanel :auth-token="authToken" :refresh-key="aiRefreshKey" />
+      <AnalyticsChat :auth-token="authToken" />
+    </div>
 
     <section class="mb-5 rounded-md border border-slate-200 bg-white">
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
