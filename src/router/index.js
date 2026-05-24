@@ -17,6 +17,12 @@ const routes = [
     meta: { activeView: 'product-detail' },
   },
   {
+    path: '/wishlist',
+    name: 'wishlist',
+    component: RouteShell,
+    meta: { activeView: 'wishlist' },
+  },
+  {
     path: '/vendor',
     name: 'vendor',
     component: RouteShell,

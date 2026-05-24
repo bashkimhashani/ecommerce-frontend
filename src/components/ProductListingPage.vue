@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
+import { useWishlistStore } from '../stores/wishlistStore'
 import FilterPanel from './FilterPanel.vue'
 import ProductCard from './ProductCard.vue'
 
@@ -12,6 +13,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['view-product'])
+const wishlistStore = useWishlistStore()
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 const defaultFilters = {
@@ -37,6 +39,12 @@ let observer = null
 let isApplyingUrlState = false
 
 const hasProducts = computed(() => products.value.length > 0)
+const displayProducts = computed(() => (
+  products.value.map((product) => ({
+    ...product,
+    is_wishlisted: wishlistStore.has(product.id),
+  }))
+))
 const pageTitle = computed(() => props.selectedCategory?.name || 'Product Catalog')
 const pageSubtitle = computed(() => {
   if (props.selectedCategory?.name) {
@@ -234,6 +242,10 @@ function setupInfiniteScroll() {
   observer.observe(loadMoreMarker.value)
 }
 
+function handleWishlistToggle({ product }) {
+  wishlistStore.toggle(product)
+}
+
 onMounted(() => {
   syncFiltersToUrl(activeFilters.value, true)
   window.addEventListener('popstate', applyFiltersFromUrl)
@@ -314,10 +326,11 @@ watch(activeFilters, () => {
         <template v-else>
           <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <ProductCard
-              v-for="product in products"
+              v-for="product in displayProducts"
               :key="product.id"
               :product="product"
               @view="emit('view-product', $event)"
+              @toggle-wishlist="handleWishlistToggle"
             />
           </div>
 
