@@ -188,7 +188,7 @@ watch(
       />
 
       <div v-else class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white transition-colors duration-300 dark:border-slate-800 dark:bg-slate-900">
-        <main class="flex min-h-[calc(100vh-153px)] w-full bg-white transition-colors duration-300 dark:bg-slate-900">
+        <main class="flex w-full bg-white transition-colors duration-300 dark:bg-slate-900">
           <VendorDashboard v-if="activeView === 'vendor'" />
           <template v-else>
             <CategoryTree @select="selectCategory" />

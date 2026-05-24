@@ -24,7 +24,7 @@ const categories = [
       <li v-for="category in categories" :key="category.slug">
         <button
           type="button"
-          class="transition hover:text-neutral-950 dark:hover:text-white"
+          class="rounded-md px-2.5 py-2 transition hover:bg-slate-100 hover:text-neutral-950 dark:hover:bg-slate-900 dark:hover:text-white"
           :class="selectedSlug === category.slug ? 'text-neutral-950 dark:text-white' : ''"
           :aria-current="selectedSlug === category.slug ? 'page' : undefined"
           @click="emit('select-category', category)"

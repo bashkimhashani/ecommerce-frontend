@@ -53,10 +53,10 @@ const profileInitials = computed(() => {
 
 <template>
   <header class="border-b border-neutral-200 bg-white/95 backdrop-blur transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950/95">
-    <div class="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center">
+    <div class="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-4 lg:flex-row lg:items-center">
       <div class="flex items-center justify-between gap-4">
         <button type="button" class="shrink-0" aria-label="Show catalog" @click="emit('show-catalog')">
-          <img class="h-10 w-auto" src="../assets/images/logo.png" alt="Vendora">
+          <img class="h-10 w-auto mix-blend-multiply dark:mix-blend-screen" src="../assets/images/logo.png" alt="Vendora">
         </button>
       </div>
 
@@ -67,10 +67,10 @@ const profileInitials = computed(() => {
 
       <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center lg:w-auto">
         <SearchBar />
-        <div class="inline-flex rounded-md border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-900">
+        <div class="inline-flex rounded-md border border-slate-200 bg-slate-50 p-1.5 dark:border-slate-700 dark:bg-slate-900">
           <button
             type="button"
-            class="rounded px-3 py-1.5 text-sm font-semibold transition"
+            class="rounded px-4 py-2 text-sm font-semibold transition"
             :class="activeView === 'catalog' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'"
             @click="emit('show-catalog')"
           >
@@ -79,7 +79,7 @@ const profileInitials = computed(() => {
           <button
             v-if="canViewVendor"
             type="button"
-            class="rounded px-3 py-1.5 text-sm font-semibold transition"
+            class="rounded px-4 py-2 text-sm font-semibold transition"
             :class="activeView === 'vendor' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'"
             @click="emit('show-vendor')"
           >
@@ -88,7 +88,7 @@ const profileInitials = computed(() => {
           <button
             v-if="canViewOrders"
             type="button"
-            class="rounded px-3 py-1.5 text-sm font-semibold transition"
+            class="rounded px-4 py-2 text-sm font-semibold transition"
             :class="activeView === 'orders' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'"
             @click="emit('show-orders')"
           >
@@ -114,7 +114,7 @@ const profileInitials = computed(() => {
           <button
             v-if="showAuthLinks"
             type="button"
-            class="rounded px-3 py-1.5 text-sm font-semibold transition"
+            class="rounded px-4 py-2 text-sm font-semibold transition"
             :class="activeView === 'tenant-register' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'"
             @click="emit('show-tenant-register')"
           >
@@ -123,7 +123,7 @@ const profileInitials = computed(() => {
           <button
             v-if="showAuthLinks"
             type="button"
-            class="rounded px-3 py-1.5 text-sm font-semibold transition"
+            class="rounded px-4 py-2 text-sm font-semibold transition"
             :class="activeView === 'login' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'"
             @click="emit('show-login')"
           >
@@ -132,7 +132,7 @@ const profileInitials = computed(() => {
           <button
             v-if="showAuthLinks"
             type="button"
-            class="rounded px-3 py-1.5 text-sm font-semibold transition"
+            class="rounded px-4 py-2 text-sm font-semibold transition"
             :class="activeView === 'register' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'"
             @click="emit('show-register')"
           >
