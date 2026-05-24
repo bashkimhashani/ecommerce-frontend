@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, ref, watch } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
 import { useChatStore } from '../stores/chatStore'
 
 const chatStore = useChatStore()
@@ -18,6 +18,10 @@ watch(
     }
   },
 )
+
+onMounted(() => {
+  chatStore.loadHistory()
+})
 
 async function sendMessage() {
   const message = draft.value
