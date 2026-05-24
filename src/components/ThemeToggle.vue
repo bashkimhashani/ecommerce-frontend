@@ -1,12 +1,12 @@
 <script setup>
-import { computed } from 'vue'
-import { useThemeStore } from '../stores/themeStore'
+import { computed } from "vue";
+import { useThemeStore } from "../stores/themeStore";
 
-const themeStore = useThemeStore()
-const isDark = computed(() => themeStore.isDark)
+const themeStore = useThemeStore();
+const isDark = computed(() => themeStore.isDark);
 
 function toggleTheme() {
-  themeStore.toggleMode()
+  themeStore.toggleMode();
 }
 </script>
 
@@ -18,6 +18,6 @@ function toggleTheme() {
     :title="isDark ? 'Light mode' : 'Dark mode'"
     @click="toggleTheme"
   >
-    {{ isDark ? 'Light' : 'Dark' }}
+    {{ isDark ? "Light" : "Dark" }}
   </button>
 </template>
