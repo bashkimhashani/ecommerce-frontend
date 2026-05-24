@@ -15,9 +15,33 @@ export const useChatStore = defineStore('chat', {
     messages: [],
     sessionId: localStorage.getItem('chatSessionId') || createSessionId(),
     isLoading: false,
+    isHistoryLoading: false,
     error: '',
   }),
   actions: {
+    async loadHistory() {
+      if (!this.sessionId || this.isHistoryLoading || this.messages.length > 0) {
+        return
+      }
+
+      this.isHistoryLoading = true
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/v1/chat/history/${this.sessionId}/`)
+        const data = await response.json().catch(() => ({}))
+
+        if (!response.ok || !Array.isArray(data.messages)) {
+          return
+        }
+
+        this.messages = data.messages.map((message) => ({
+          role: message.role,
+          content: message.content,
+          products: Array.isArray(message.products) ? message.products : [],
+        }))
+      } finally {
+        this.isHistoryLoading = false
+      }
+    },
     async sendMessage(content) {
       const message = content.trim()
       const authStore = useAuthStore()
