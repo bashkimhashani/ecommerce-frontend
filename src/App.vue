@@ -122,6 +122,12 @@ function selectCategory(category) {
   selectedProductSlug.value = ''
   router.push({ name: 'catalog' })
 }
+
+function openProductFromChat(slug) {
+  isCheckoutOpen.value = false
+  selectedProductSlug.value = slug
+  router.push({ name: 'catalog' })
+}
 </script>
 
 <template>
@@ -194,6 +200,6 @@ function selectCategory(category) {
     </div>
 
     <ShopingCart v-if="!isCheckoutOpen" @checkout="openCheckout" />
-    <ChatWidget />
+    <ChatWidget @view-product="openProductFromChat" />
   </div>
 </template>

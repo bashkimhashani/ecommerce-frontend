@@ -3,9 +3,11 @@ import { nextTick, ref, watch } from 'vue'
 import { useChatStore } from '../stores/chatStore'
 
 const chatStore = useChatStore()
+const emit = defineEmits(['view-product'])
 const isOpen = ref(false)
 const draft = ref('')
 const messageList = ref(null)
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 watch(
   () => chatStore.messages.length,
@@ -21,6 +23,24 @@ async function sendMessage() {
   const message = draft.value
   draft.value = ''
   await chatStore.sendMessage(message)
+}
+
+function imageUrl(product) {
+  if (!product.thumbnail) {
+    return ''
+  }
+  if (product.thumbnail.startsWith('http')) {
+    return product.thumbnail
+  }
+  return `${apiBaseUrl}${product.thumbnail}`
+}
+
+function viewProduct(product) {
+  if (!product.slug) {
+    return
+  }
+  isOpen.value = false
+  emit('view-product', product.slug)
 }
 </script>
 
@@ -54,7 +74,7 @@ async function sendMessage() {
         <div
           v-for="(message, index) in chatStore.messages"
           :key="`${message.role}-${index}`"
-          class="flex"
+          class="flex flex-col"
           :class="message.role === 'user' ? 'justify-end' : 'justify-start'"
         >
           <p
@@ -65,6 +85,42 @@ async function sendMessage() {
           >
             {{ message.content }}
           </p>
+          <div
+            v-if="message.role === 'assistant' && message.products?.length"
+            class="mt-2 grid gap-2"
+          >
+            <button
+              v-for="product in message.products"
+              :key="product.id"
+              type="button"
+              class="grid w-[17rem] max-w-full grid-cols-[4.5rem_minmax(0,1fr)] gap-3 rounded-md border border-slate-200 bg-white p-2 text-left shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
+              @click="viewProduct(product)"
+            >
+              <div class="overflow-hidden rounded bg-slate-100">
+                <img
+                  v-if="imageUrl(product)"
+                  :src="imageUrl(product)"
+                  :alt="product.name"
+                  class="aspect-square h-full w-full object-cover"
+                  loading="lazy"
+                >
+                <div v-else class="flex aspect-square items-center justify-center px-2 text-center text-[11px] font-medium text-slate-400">
+                  {{ product.name }}
+                </div>
+              </div>
+              <div class="min-w-0 py-0.5">
+                <p class="truncate text-sm font-semibold text-slate-950">
+                  {{ product.name }}
+                </p>
+                <p class="mt-0.5 truncate text-xs text-slate-500">
+                  {{ product.brand }} · {{ product.category }}
+                </p>
+                <p class="mt-1 text-sm font-semibold text-slate-900">
+                  ${{ product.price }}
+                </p>
+              </div>
+            </button>
+          </div>
         </div>
         <div v-if="chatStore.isLoading" class="text-xs text-slate-500">Thinking...</div>
       </div>
