@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import CategoryTree from './components/CategoryTree.vue'
@@ -18,11 +18,15 @@ import ResetPasswordPage from './components/ResetPasswordPage.vue'
 import ShopingCart from './components/ShopingCart.vue'
 import TenantRegistrationPage from './components/TenantRegistrationPage.vue'
 import VendorDashboard from './components/VendorDashboard.vue'
+import WishlistPage from './components/WishlistPage.vue'
+import { useWishlistStore } from './stores/wishlistStore'
 
 const route = useRoute()
 const router = useRouter()
+const wishlistStore = useWishlistStore()
 const isCheckoutOpen = ref(false)
 const selectedCategory = ref(null)
+const isScrollTopVisible = ref(false)
 
 const activeView = computed(() => {
   if (route.query.uid && route.query.token) {
@@ -53,6 +57,11 @@ function showCatalog() {
 function showVendor() {
   isCheckoutOpen.value = false
   router.push({ name: 'vendor' })
+}
+
+function showWishlist() {
+  isCheckoutOpen.value = false
+  router.push({ name: 'wishlist' })
 }
 
 function showOrders() {
@@ -122,6 +131,26 @@ function showProduct(productSlug) {
 function openProductFromChat(slug) {
   showProduct(slug)
 }
+
+function updateScrollTopVisibility() {
+  isScrollTopVisible.value = window.scrollY > 420
+}
+
+function scrollToTop() {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth',
+  })
+}
+
+onMounted(() => {
+  updateScrollTopVisibility()
+  window.addEventListener('scroll', updateScrollTopVisibility, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', updateScrollTopVisibility)
+})
 </script>
 
 <template>
@@ -129,8 +158,10 @@ function openProductFromChat(slug) {
     <Header
       :active-view="activeView === 'order-detail' ? 'orders' : activeView === 'product-detail' ? 'catalog' : activeView"
       :selected-category-slug="selectedCategory?.slug || ''"
+      :wishlist-count="wishlistStore.count"
       @select-category="selectCategory"
       @show-catalog="showCatalog"
+      @show-wishlist="showWishlist"
       @show-vendor="showVendor"
       @show-orders="showOrders"
       @show-profile="showProfile"
@@ -170,6 +201,11 @@ function openProductFromChat(slug) {
 
     <ProfileEditPage v-else-if="activeView === 'profile'" />
 
+    <WishlistPage
+      v-else-if="activeView === 'wishlist'"
+      @view-product="showProduct"
+    />
+
     <OrderDetail
       v-else-if="activeView === 'order-detail'"
       :order-number="selectedOrderNumber"
@@ -197,5 +233,15 @@ function openProductFromChat(slug) {
 
     <ShopingCart v-if="!isCheckoutOpen" @checkout="openCheckout" />
     <ChatWidget @view-product="openProductFromChat" />
+    <button
+      v-if="isScrollTopVisible"
+      type="button"
+      class="fixed bottom-28 right-5 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-xl font-semibold leading-none text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+      aria-label="Back to top"
+      title="Back to top"
+      @click="scrollToTop"
+    >
+      ^
+    </button>
   </div>
 </template>
