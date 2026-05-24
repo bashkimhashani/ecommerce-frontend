@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref , watch} from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import AppFooter from './components/AppFooter.vue'
@@ -26,12 +26,6 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
-import WishlistPage from './components/WishlistPage.vue'
-import { useWishlistStore } from './stores/wishlistStore'
-
-const route = useRoute()
-const router = useRouter()
-const wishlistStore = useWishlistStore()
 const isCheckoutOpen = ref(false)
 const selectedCategory = ref(null)
 const isScrollTopVisible = ref(false)
@@ -65,11 +59,6 @@ function showCatalog() {
 function showVendor() {
   isCheckoutOpen.value = false
   router.push({ name: 'vendor' })
-}
-
-function showWishlist() {
-  isCheckoutOpen.value = false
-  router.push({ name: 'wishlist' })
 }
 
 function showOrders() {
@@ -170,10 +159,8 @@ onBeforeUnmount(() => {
     <Header
       :active-view="activeView === 'order-detail' ? 'orders' : activeView === 'product-detail' ? 'catalog' : activeView"
       :selected-category-slug="selectedCategory?.slug || ''"
-      :wishlist-count="wishlistStore.count"
       @select-category="selectCategory"
       @show-catalog="showCatalog"
-      @show-wishlist="showWishlist"
       @show-vendor="showVendor"
       @show-orders="showOrders"
       @show-profile="showProfile"
@@ -243,73 +230,10 @@ onBeforeUnmount(() => {
     <ShopingCart v-if="!isCheckoutOpen" @checkout="openCheckout" />
     <ChatWidget @view-product="openProductFromChat" />
     <AppFooter />
-    <CheckoutWizard v-if="isCheckoutOpen" @close="closeCheckout" />
-
-    <LoginPage
-      v-else-if="activeView === 'login'"
-      @forgot-password="showForgotPassword"
-      @login-success="handleLoginSuccess"
-    />
-
-    <ForgotPasswordPage
-      v-else-if="activeView === 'forgot-password'"
-      @back-to-login="showLogin"
-    />
-
-    <ResetPasswordPage
-      v-else-if="activeView === 'reset-password'"
-      :uid="resetPasswordUid"
-      :token="resetPasswordToken"
-      @back-to-login="showLogin"
-    />
-
-    <RegisterPage v-else-if="activeView === 'register'" @register-success="handleRegisterSuccess" />
-
-    <TenantRegistrationPage
-      v-else-if="activeView === 'tenant-register'"
-      @tenant-register-success="handleTenantRegisterSuccess"
-    />
-
-    <OrderHistory v-else-if="activeView === 'orders'" @view-order="showOrderDetail" />
-
-    <ProfileEditPage v-else-if="activeView === 'profile'" />
-
-    <WishlistPage
-      v-else-if="activeView === 'wishlist'"
-      @view-product="showProduct"
-    />
-
-    <OrderDetail
-      v-else-if="activeView === 'order-detail'"
-      :order-number="selectedOrderNumber"
-      @back="showOrders"
-    />
-
-    <div v-else class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white">
-      <main class="flex min-h-[calc(100vh-81px)] w-full bg-white">
-        <VendorDashboard v-if="activeView === 'vendor'" />
-        <template v-else>
-          <CategoryTree @select="selectCategory" />
-          <ProductDetailPage
-            v-if="selectedProductSlug"
-            :slug="selectedProductSlug"
-            @back="showCatalog"
-          />
-          <ProductListingPage
-            v-else
-            :selected-category="selectedCategory"
-            @view-product="showProduct"
-          />
-        </template>
-      </main>
-    </div>
-
-    <ShopingCart v-if="!isCheckoutOpen" @checkout="openCheckout" />
-    <ChatWidget @view-product="openProductFromChat" />
     <button
       v-if="isScrollTopVisible"
       type="button"
-      class="fixed bottom-28 right-5 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-xl font-semibold leading-none text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+      class="fixed bottom-28 right-5 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-xl font-semibold leading-none text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
       aria-label="Back to top"
       title="Back to top"
       @click="scrollToTop"

@@ -15,16 +15,11 @@ defineProps({
     type: String,
     default: '',
   },
-  wishlistCount: {
-    type: Number,
-    default: 0,
-  },
 })
 
 const emit = defineEmits([
   'select-category',
   'show-catalog',
-  'show-wishlist',
   'show-vendor',
   'show-orders',
   'show-profile',
@@ -80,20 +75,6 @@ const profileInitials = computed(() => {
             @click="emit('show-catalog')"
           >
             Catalog
-          </button>
-          <button
-            type="button"
-            class="rounded px-3 py-1.5 text-sm font-semibold transition"
-            :class="activeView === 'wishlist' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
-            @click="emit('show-wishlist')"
-          >
-            Wishlist
-            <span
-              v-if="wishlistCount"
-              class="ml-1 inline-flex min-w-5 justify-center rounded-full bg-rose-100 px-1.5 text-xs font-semibold text-rose-700"
-            >
-              {{ wishlistCount }}
-            </span>
           </button>
           <button
             v-if="canViewVendor"
