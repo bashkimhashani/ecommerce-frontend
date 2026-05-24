@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import CategoryTree from './components/CategoryTree.vue'
+import ChatWidget from './components/ChatWidget.vue'
 import CheckoutWizard from './components/CheckoutWizard.vue'
 import ForgotPasswordPage from './components/ForgotPasswordPage.vue'
 import Header from './components/Header.vue'
@@ -193,5 +194,6 @@ function selectCategory(category) {
     </div>
 
     <ShopingCart v-if="!isCheckoutOpen" @checkout="openCheckout" />
+    <ChatWidget />
   </div>
 </template>
