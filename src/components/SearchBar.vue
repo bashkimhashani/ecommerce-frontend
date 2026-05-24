@@ -181,14 +181,14 @@ onBeforeUnmount(() => {
 <template>
   <div data-search-bar class="relative w-full max-w-md">
     <form
-      class="flex items-center rounded-md border border-slate-200 bg-white shadow-sm focus-within:border-slate-400"
+      class="flex items-center rounded-md border border-slate-200 bg-white shadow-sm focus-within:border-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:focus-within:border-slate-500"
       @submit.prevent="submitSearch()"
     >
       <input
         v-model="query"
         type="search"
         autocomplete="off"
-        class="min-w-0 flex-1 rounded-l-md px-3 py-2 text-sm text-slate-800 outline-none"
+        class="min-w-0 flex-1 rounded-l-md bg-transparent px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500"
         placeholder="Search products"
         aria-label="Search products"
         @focus="isOpen = Boolean(query.trim().length >= 2)"
@@ -201,7 +201,7 @@ onBeforeUnmount(() => {
       <button
         v-if="query"
         type="button"
-        class="flex h-9 w-9 items-center justify-center text-slate-400 hover:text-slate-700"
+        class="flex h-9 w-9 items-center justify-center text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200"
         aria-label="Clear search"
         @click="clearSearch"
       >
@@ -210,7 +210,7 @@ onBeforeUnmount(() => {
 
       <button
         type="submit"
-        class="mr-1 rounded-md bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-700"
+        class="mr-1 rounded-md bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-300"
       >
         Search
       </button>
@@ -218,12 +218,12 @@ onBeforeUnmount(() => {
 
     <div
       v-if="isOpen"
-      class="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg"
+      class="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-950"
     >
-      <div v-if="isLoading" class="px-3 py-3 text-sm text-slate-500">
+      <div v-if="isLoading" class="px-3 py-3 text-sm text-slate-500 dark:text-slate-400">
         Loading suggestions...
       </div>
-      <div v-else-if="errorMessage" class="px-3 py-3 text-sm text-red-600">
+      <div v-else-if="errorMessage" class="px-3 py-3 text-sm text-red-600 dark:text-red-300">
         {{ errorMessage }}
       </div>
       <ul v-else-if="hasSuggestions" class="max-h-72 overflow-y-auto py-1">
@@ -233,15 +233,15 @@ onBeforeUnmount(() => {
         >
           <button
             type="button"
-            class="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-            :class="{ 'bg-slate-100': index === selectedIndex }"
+            class="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-900"
+            :class="{ 'bg-slate-100 dark:bg-slate-900': index === selectedIndex }"
             @mousedown.prevent="selectSuggestion(suggestion)"
           >
             {{ suggestion }}
           </button>
         </li>
       </ul>
-      <div v-else class="px-3 py-3 text-sm text-slate-500">
+      <div v-else class="px-3 py-3 text-sm text-slate-500 dark:text-slate-400">
         No suggestions found.
       </div>
     </div>

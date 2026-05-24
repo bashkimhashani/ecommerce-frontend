@@ -1,25 +1,12 @@
 <script setup>
-import { computed, ref } from 'vue'
-import { useAuthStore } from '../stores/authStore'
+import { computed } from 'vue'
 import { useThemeStore } from '../stores/themeStore'
 
-const authStore = useAuthStore()
 const themeStore = useThemeStore()
-const mode = ref(themeStore.mode)
-const isDark = computed(() => mode.value === 'dark')
+const isDark = computed(() => themeStore.isDark)
 
 function toggleTheme() {
-  mode.value = isDark.value ? 'light' : 'dark'
-  themeStore.setMode(mode.value)
-  document.documentElement.classList.toggle('dark', isDark.value)
-  document.documentElement.style.colorScheme = isDark.value ? 'dark' : 'light'
-
-  const userKey = authStore.user?.id || authStore.user?.email || 'guest'
-  try {
-    localStorage.setItem(`vendoraTheme:${userKey}`, mode.value)
-  } catch {
-    sessionStorage.setItem(`vendoraTheme:${userKey}`, mode.value)
-  }
+  themeStore.toggleMode()
 }
 </script>
 

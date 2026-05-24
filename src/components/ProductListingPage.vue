@@ -270,7 +270,7 @@ watch(activeFilters, () => {
 </script>
 
 <template>
-  <section class="flex min-w-0 flex-1 flex-col lg:flex-row">
+  <section class="flex min-w-0 flex-1 flex-col bg-white text-slate-950 dark:bg-slate-950 dark:text-slate-100 lg:flex-row">
     <FilterPanel
       v-model="activeFilters"
       :facets="facets"
@@ -278,17 +278,17 @@ watch(activeFilters, () => {
     />
 
     <div class="min-w-0 flex-1 px-6 py-5">
-      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-700">
         <div>
-          <h1 class="text-xl font-semibold text-slate-950">
+          <h1 class="text-xl font-semibold text-slate-950 dark:text-white">
             {{ pageTitle }}
           </h1>
-          <p class="mt-1 text-sm text-slate-500">
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {{ pageSubtitle }}
           </p>
         </div>
 
-        <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600">
+        <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
           {{ products.length }} loaded
         </div>
       </div>
@@ -298,17 +298,17 @@ watch(activeFilters, () => {
           <div
             v-for="item in 9"
             :key="item"
-            class="h-80 animate-pulse rounded-md border border-slate-200 bg-slate-50"
+            class="h-80 animate-pulse rounded-md border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900"
           ></div>
         </div>
 
-        <div v-else-if="errorMessage" class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div v-else-if="errorMessage" class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
           {{ errorMessage }}
         </div>
 
-        <div v-else-if="!hasProducts" class="rounded-md border border-slate-200 bg-slate-50 px-4 py-12 text-center">
-          <p class="text-sm font-semibold text-slate-700">No products found.</p>
-          <p class="mt-1 text-sm text-slate-500">Products will appear here after they are published.</p>
+        <div v-else-if="!hasProducts" class="rounded-md border border-slate-200 bg-slate-50 px-4 py-12 text-center dark:border-slate-700 dark:bg-slate-900">
+          <p class="text-sm font-semibold text-slate-700 dark:text-slate-100">No products found.</p>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Products will appear here after they are published.</p>
         </div>
 
         <template v-else>
@@ -322,18 +322,18 @@ watch(activeFilters, () => {
           </div>
 
           <div ref="loadMoreMarker" class="flex min-h-20 items-center justify-center py-6">
-            <div v-if="isLoadingMore" class="text-sm font-medium text-slate-500">
+            <div v-if="isLoadingMore" class="text-sm font-medium text-slate-500 dark:text-slate-400">
               Loading more products...
             </div>
             <button
               v-else-if="nextPageUrl"
               type="button"
-              class="rounded-md border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              class="rounded-md border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
               @click="loadNextPage"
             >
               Load more
             </button>
-            <p v-else class="text-sm text-slate-500">
+            <p v-else class="text-sm text-slate-500 dark:text-slate-400">
               End of catalog
             </p>
           </div>

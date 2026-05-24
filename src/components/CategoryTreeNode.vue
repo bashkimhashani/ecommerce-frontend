@@ -35,13 +35,13 @@ const indentation = computed(() => ({
   <li>
     <div
       class="group flex min-h-10 items-center gap-1 rounded-md pr-2 text-sm transition-colors"
-      :class="isSelected ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'"
+      :class="isSelected ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950' : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900'"
       :style="indentation"
     >
       <button
         v-if="hasChildren"
         type="button"
-        class="grid h-8 w-8 shrink-0 place-items-center rounded-md text-base transition-transform hover:bg-black/5"
+        class="grid h-8 w-8 shrink-0 place-items-center rounded-md text-base transition-transform hover:bg-black/5 dark:hover:bg-white/10"
         :aria-label="`${isExpanded ? 'Collapse' : 'Expand'} ${category.name}`"
         :aria-expanded="isExpanded"
         @click.stop="emit('toggle', category.id)"
