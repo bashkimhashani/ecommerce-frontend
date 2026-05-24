@@ -10,9 +10,14 @@ defineProps({
     type: String,
     default: 'catalog',
   },
+  selectedCategorySlug: {
+    type: String,
+    default: '',
+  },
 })
 
 const emit = defineEmits([
+  'select-category',
   'show-catalog',
   'show-vendor',
   'show-orders',
@@ -53,7 +58,10 @@ const profileInitials = computed(() => {
         </button>
       </div>
 
-      <NavigationBar />
+      <NavigationBar
+        :selected-slug="selectedCategorySlug"
+        @select-category="emit('select-category', $event)"
+      />
 
       <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center lg:w-auto">
         <SearchBar />
