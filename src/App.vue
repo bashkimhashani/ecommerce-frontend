@@ -23,7 +23,6 @@ const route = useRoute()
 const router = useRouter()
 const isCheckoutOpen = ref(false)
 const selectedCategory = ref(null)
-const selectedProductSlug = ref('')
 
 const activeView = computed(() => {
   if (route.query.uid && route.query.token) {
@@ -33,6 +32,7 @@ const activeView = computed(() => {
   return route.meta.activeView || 'catalog'
 })
 const selectedOrderNumber = computed(() => String(route.params.orderNumber || ''))
+const selectedProductSlug = computed(() => String(route.params.productSlug || ''))
 const resetPasswordUid = computed(() => String(route.query.uid || ''))
 const resetPasswordToken = computed(() => String(route.query.token || ''))
 
@@ -47,49 +47,41 @@ function closeCheckout() {
 function showCatalog() {
   isCheckoutOpen.value = false
   selectedCategory.value = null
-  selectedProductSlug.value = ''
   router.push({ name: 'catalog' })
 }
 
 function showVendor() {
   isCheckoutOpen.value = false
-  selectedProductSlug.value = ''
   router.push({ name: 'vendor' })
 }
 
 function showOrders() {
   isCheckoutOpen.value = false
-  selectedProductSlug.value = ''
   router.push({ name: 'orders' })
 }
 
 function showProfile() {
   isCheckoutOpen.value = false
-  selectedProductSlug.value = ''
   router.push({ name: 'profile' })
 }
 
 function showLogin() {
   isCheckoutOpen.value = false
-  selectedProductSlug.value = ''
   router.push({ name: 'login' })
 }
 
 function showForgotPassword() {
   isCheckoutOpen.value = false
-  selectedProductSlug.value = ''
   router.push({ name: 'forgot-password' })
 }
 
 function showRegister() {
   isCheckoutOpen.value = false
-  selectedProductSlug.value = ''
   router.push({ name: 'register' })
 }
 
 function showTenantRegister() {
   isCheckoutOpen.value = false
-  selectedProductSlug.value = ''
   router.push({ name: 'tenant-register' })
 }
 
@@ -114,27 +106,28 @@ function handleLoginSuccess() {
 
 function showOrderDetail(orderNumber) {
   isCheckoutOpen.value = false
-  selectedProductSlug.value = ''
   router.push({ name: 'order-detail', params: { orderNumber } })
 }
 
 function selectCategory(category) {
   selectedCategory.value = category
-  selectedProductSlug.value = ''
   router.push({ name: 'catalog' })
 }
 
-function openProductFromChat(slug) {
+function showProduct(productSlug) {
   isCheckoutOpen.value = false
-  selectedProductSlug.value = slug
-  router.push({ name: 'catalog' })
+  router.push({ name: 'product-detail', params: { productSlug } })
+}
+
+function openProductFromChat(slug) {
+  showProduct(slug)
 }
 </script>
 
 <template>
   <div class="min-h-screen bg-slate-50 text-slate-950">
     <Header
-      :active-view="activeView === 'order-detail' ? 'orders' : activeView"
+      :active-view="activeView === 'order-detail' ? 'orders' : activeView === 'product-detail' ? 'catalog' : activeView"
       :selected-category-slug="selectedCategory?.slug || ''"
       @select-category="selectCategory"
       @show-catalog="showCatalog"
@@ -191,12 +184,12 @@ function openProductFromChat(slug) {
           <ProductDetailPage
             v-if="selectedProductSlug"
             :slug="selectedProductSlug"
-            @back="selectedProductSlug = ''"
+            @back="showCatalog"
           />
           <ProductListingPage
             v-else
             :selected-category="selectedCategory"
-            @view-product="selectedProductSlug = $event"
+            @view-product="showProduct"
           />
         </template>
       </main>

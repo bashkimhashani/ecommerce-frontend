@@ -11,6 +11,12 @@ const routes = [
     meta: { activeView: 'catalog' },
   },
   {
+    path: '/products/:productSlug',
+    name: 'product-detail',
+    component: RouteShell,
+    meta: { activeView: 'product-detail' },
+  },
+  {
     path: '/vendor',
     name: 'vendor',
     component: RouteShell,

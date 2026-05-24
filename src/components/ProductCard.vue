@@ -44,13 +44,25 @@ function toggleWishlist() {
   })
 }
 
+function viewProduct() {
+  emit('view', props.product.slug)
+}
+
 watch(() => props.product.is_wishlisted, (nextValue) => {
   isWishlisted.value = Boolean(nextValue)
 })
 </script>
 
 <template>
-  <article class="flex h-full flex-col overflow-hidden rounded-md border border-slate-200 bg-white transition hover:border-slate-300 hover:shadow-sm">
+  <article
+    class="flex h-full cursor-pointer flex-col overflow-hidden rounded-md border border-slate-200 bg-white transition hover:border-slate-300 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
+    role="button"
+    tabindex="0"
+    :aria-label="`View ${product.name}`"
+    @click="viewProduct"
+    @keydown.enter.prevent="viewProduct"
+    @keydown.space.prevent="viewProduct"
+  >
     <div class="relative aspect-[4/3] bg-slate-100">
       <img
         v-if="product.thumbnail"
@@ -71,7 +83,7 @@ watch(() => props.product.is_wishlisted, (nextValue) => {
         :class="{ 'text-rose-600': isWishlisted }"
         :aria-pressed="isWishlisted"
         :aria-label="isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'"
-        @click="toggleWishlist"
+        @click.stop="toggleWishlist"
       >
         <svg
           class="h-4 w-4"
@@ -120,7 +132,7 @@ watch(() => props.product.is_wishlisted, (nextValue) => {
         <button
           type="button"
           class="rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-          @click="emit('view', product.slug)"
+          @click.stop="viewProduct"
         >
           View
         </button>
