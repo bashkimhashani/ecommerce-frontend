@@ -1,9 +1,9 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-
 import { useWishlistStore } from '../stores/wishlistStore'
 import FilterPanel from './FilterPanel.vue'
 import ProductCard from './ProductCard.vue'
+
 
 const props = defineProps({
   selectedCategory: {
@@ -241,7 +241,6 @@ function setupInfiniteScroll() {
   )
   observer.observe(loadMoreMarker.value)
 }
-
 function handleWishlistToggle({ product }) {
   wishlistStore.toggle(product)
 }

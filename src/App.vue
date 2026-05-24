@@ -1,162 +1,179 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
-import CategoryTree from './components/CategoryTree.vue'
-import ChatWidget from './components/ChatWidget.vue'
-import CheckoutWizard from './components/CheckoutWizard.vue'
-import ForgotPasswordPage from './components/ForgotPasswordPage.vue'
-import Header from './components/Header.vue'
-import LoginPage from './components/LoginPage.vue'
-import OrderDetail from './components/OrderDetail.vue'
-import OrderHistory from './components/OrderHistory.vue'
-import ProfileEditPage from './components/ProfileEditPage.vue'
-import ProductDetailPage from './components/ProductDetailPage.vue'
-import ProductListingPage from './components/ProductListingPage.vue'
-import RegisterPage from './components/RegisterPage.vue'
-import ResetPasswordPage from './components/ResetPasswordPage.vue'
-import ShopingCart from './components/ShopingCart.vue'
-import TenantRegistrationPage from './components/TenantRegistrationPage.vue'
-import VendorDashboard from './components/VendorDashboard.vue'
-import WishlistPage from './components/WishlistPage.vue'
-import { useWishlistStore } from './stores/wishlistStore'
+import CategoryTree from "./components/CategoryTree.vue";
+import ChatWidget from "./components/ChatWidget.vue";
+import CheckoutWizard from "./components/CheckoutWizard.vue";
+import ForgotPasswordPage from "./components/ForgotPasswordPage.vue";
+import Header from "./components/Header.vue";
+import LoginPage from "./components/LoginPage.vue";
+import OrderDetail from "./components/OrderDetail.vue";
+import OrderHistory from "./components/OrderHistory.vue";
+import ProfileEditPage from "./components/ProfileEditPage.vue";
+import ProductDetailPage from "./components/ProductDetailPage.vue";
+import ProductListingPage from "./components/ProductListingPage.vue";
+import RegisterPage from "./components/RegisterPage.vue";
+import ResetPasswordPage from "./components/ResetPasswordPage.vue";
+import ShopingCart from "./components/ShopingCart.vue";
+import TenantRegistrationPage from "./components/TenantRegistrationPage.vue";
+import VendorDashboard from "./components/VendorDashboard.vue";
+import { useAuthStore } from "./stores/authStore";
+import { useThemeStore } from "./stores/themeStore";
+import WishlistPage from "./components/WishlistPage.vue";
+import { useWishlistStore } from "./stores/wishlistStore";
 
-const route = useRoute()
-const router = useRouter()
-const wishlistStore = useWishlistStore()
-const isCheckoutOpen = ref(false)
-const selectedCategory = ref(null)
-const isScrollTopVisible = ref(false)
+const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
+const themeStore = useThemeStore();
+const wishlistStore = useWishlistStore();
+const isCheckoutOpen = ref(false);
+const selectedCategory = ref(null);
+const isScrollTopVisible = ref(false);
 
 const activeView = computed(() => {
   if (route.query.uid && route.query.token) {
-    return 'reset-password'
+    return "reset-password";
   }
 
-  return route.meta.activeView || 'catalog'
-})
-const selectedOrderNumber = computed(() => String(route.params.orderNumber || ''))
-const selectedProductSlug = computed(() => String(route.params.productSlug || ''))
-const resetPasswordUid = computed(() => String(route.query.uid || ''))
-const resetPasswordToken = computed(() => String(route.query.token || ''))
+  return route.meta.activeView || "catalog";
+});
+const selectedOrderNumber = computed(() =>
+  String(route.params.orderNumber || ""),
+);
+const selectedProductSlug = computed(() =>
+  String(route.params.productSlug || ""),
+);
+const resetPasswordUid = computed(() => String(route.query.uid || ""));
+const resetPasswordToken = computed(() => String(route.query.token || ""));
 
 function openCheckout() {
-  isCheckoutOpen.value = true
+  isCheckoutOpen.value = true;
 }
 
 function closeCheckout() {
-  isCheckoutOpen.value = false
+  isCheckoutOpen.value = false;
 }
 
 function showCatalog() {
-  isCheckoutOpen.value = false
-  selectedCategory.value = null
-  router.push({ name: 'catalog' })
+  isCheckoutOpen.value = false;
+  selectedCategory.value = null;
+  router.push({ name: "catalog" });
 }
 
 function showVendor() {
-  isCheckoutOpen.value = false
-  router.push({ name: 'vendor' })
-}
-
-function showWishlist() {
-  isCheckoutOpen.value = false
-  router.push({ name: 'wishlist' })
+  isCheckoutOpen.value = false;
+  router.push({ name: "vendor" });
 }
 
 function showOrders() {
-  isCheckoutOpen.value = false
-  router.push({ name: 'orders' })
+  isCheckoutOpen.value = false;
+  router.push({ name: "orders" });
+}
+
+function showWishlist() {
+  isCheckoutOpen.value = false;
+  router.push({ name: "wishlist" });
 }
 
 function showProfile() {
-  isCheckoutOpen.value = false
-  router.push({ name: 'profile' })
+  isCheckoutOpen.value = false;
+  router.push({ name: "profile" });
 }
 
 function showLogin() {
-  isCheckoutOpen.value = false
-  router.push({ name: 'login' })
+  isCheckoutOpen.value = false;
+  router.push({ name: "login" });
 }
 
 function showForgotPassword() {
-  isCheckoutOpen.value = false
-  router.push({ name: 'forgot-password' })
+  isCheckoutOpen.value = false;
+  router.push({ name: "forgot-password" });
 }
 
 function showRegister() {
-  isCheckoutOpen.value = false
-  router.push({ name: 'register' })
+  isCheckoutOpen.value = false;
+  router.push({ name: "register" });
 }
 
 function showTenantRegister() {
-  isCheckoutOpen.value = false
-  router.push({ name: 'tenant-register' })
+  isCheckoutOpen.value = false;
+  router.push({ name: "tenant-register" });
 }
 
 function handleRegisterSuccess() {
-  showCatalog()
+  showCatalog();
 }
 
 function handleTenantRegisterSuccess() {
-  router.push({ name: 'vendor' })
+  router.push({ name: "vendor" });
 }
 
 function handleLoginSuccess() {
-  const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : ''
+  const redirect =
+    typeof route.query.redirect === "string" ? route.query.redirect : "";
 
-  if (redirect.startsWith('/')) {
-    router.push(redirect)
-    return
+  if (redirect.startsWith("/")) {
+    router.push(redirect);
+    return;
   }
 
-  showCatalog()
+  showCatalog();
 }
 
 function showOrderDetail(orderNumber) {
-  isCheckoutOpen.value = false
-  router.push({ name: 'order-detail', params: { orderNumber } })
+  isCheckoutOpen.value = false;
+  router.push({ name: "order-detail", params: { orderNumber } });
 }
 
 function selectCategory(category) {
-  selectedCategory.value = category
-  router.push({ name: 'catalog' })
+  selectedCategory.value = category;
+  router.push({ name: "catalog" });
 }
 
 function showProduct(productSlug) {
-  isCheckoutOpen.value = false
-  router.push({ name: 'product-detail', params: { productSlug } })
+  isCheckoutOpen.value = false;
+  router.push({ name: "product-detail", params: { productSlug } });
 }
 
 function openProductFromChat(slug) {
-  showProduct(slug)
+  showProduct(slug);
 }
 
 function updateScrollTopVisibility() {
-  isScrollTopVisible.value = window.scrollY > 420
+  isScrollTopVisible.value = window.scrollY > 420;
 }
 
 function scrollToTop() {
   window.scrollTo({
     top: 0,
-    behavior: 'smooth',
-  })
+    behavior: "smooth",
+  });
 }
 
 onMounted(() => {
-  updateScrollTopVisibility()
-  window.addEventListener('scroll', updateScrollTopVisibility, { passive: true })
-})
+  updateScrollTopVisibility();
+  window.addEventListener("scroll", updateScrollTopVisibility, {
+    passive: true,
+  });
+});
 
 onBeforeUnmount(() => {
-  window.removeEventListener('scroll', updateScrollTopVisibility)
-})
+  window.removeEventListener("scroll", updateScrollTopVisibility);
+});
 </script>
 
 <template>
   <div class="min-h-screen bg-slate-50 text-slate-950">
     <Header
-      :active-view="activeView === 'order-detail' ? 'orders' : activeView === 'product-detail' ? 'catalog' : activeView"
+      :active-view="
+        activeView === 'order-detail'
+          ? 'orders'
+          : activeView === 'product-detail'
+            ? 'catalog'
+            : activeView
+      "
       :selected-category-slug="selectedCategory?.slug || ''"
       :wishlist-count="wishlistStore.count"
       @select-category="selectCategory"
@@ -190,14 +207,20 @@ onBeforeUnmount(() => {
       @back-to-login="showLogin"
     />
 
-    <RegisterPage v-else-if="activeView === 'register'" @register-success="handleRegisterSuccess" />
+    <RegisterPage
+      v-else-if="activeView === 'register'"
+      @register-success="handleRegisterSuccess"
+    />
 
     <TenantRegistrationPage
       v-else-if="activeView === 'tenant-register'"
       @tenant-register-success="handleTenantRegisterSuccess"
     />
 
-    <OrderHistory v-else-if="activeView === 'orders'" @view-order="showOrderDetail" />
+    <OrderHistory
+      v-else-if="activeView === 'orders'"
+      @view-order="showOrderDetail"
+    />
 
     <ProfileEditPage v-else-if="activeView === 'profile'" />
 
@@ -212,7 +235,10 @@ onBeforeUnmount(() => {
       @back="showOrders"
     />
 
-    <div v-else class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white">
+    <div
+      v-else
+      class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white"
+    >
       <main class="flex min-h-[calc(100vh-81px)] w-full bg-white">
         <VendorDashboard v-if="activeView === 'vendor'" />
         <template v-else>
