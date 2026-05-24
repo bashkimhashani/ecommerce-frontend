@@ -20,12 +20,12 @@ const categories = [
 
 <template>
   <nav class="flex-1 overflow-x-auto" aria-label="Product categories">
-    <ul class="flex min-w-max items-center gap-5 text-sm font-medium text-neutral-600">
+    <ul class="flex min-w-max items-center gap-5 text-sm font-medium text-neutral-600 dark:text-slate-400">
       <li v-for="category in categories" :key="category.slug">
         <button
           type="button"
-          class="transition hover:text-neutral-950"
-          :class="selectedSlug === category.slug ? 'text-neutral-950' : ''"
+          class="transition hover:text-neutral-950 dark:hover:text-white"
+          :class="selectedSlug === category.slug ? 'text-neutral-950 dark:text-white' : ''"
           :aria-current="selectedSlug === category.slug ? 'page' : undefined"
           @click="emit('select-category', category)"
         >

@@ -4,6 +4,7 @@ import { usePermission } from '../composables/usePermission'
 import { useAuthStore } from '../stores/authStore'
 import NavigationBar from './NavigationBar.vue'
 import SearchBar from './SearchBar.vue'
+import ThemeToggle from './ThemeToggle.vue'
 
 defineProps({
   activeView: {
@@ -47,10 +48,11 @@ const profileInitials = computed(() => {
   const lastInitial = authStore.user?.last_name?.charAt(0) || ''
   return `${firstInitial}${lastInitial}`.toUpperCase() || 'U'
 })
+
 </script>
 
 <template>
-  <header class="border-b border-neutral-200 bg-white">
+  <header class="border-b border-neutral-200 bg-white/95 backdrop-blur transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950/95">
     <div class="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center">
       <div class="flex items-center justify-between gap-4">
         <button type="button" class="shrink-0" aria-label="Show catalog" @click="emit('show-catalog')">
@@ -65,11 +67,11 @@ const profileInitials = computed(() => {
 
       <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center lg:w-auto">
         <SearchBar />
-        <div class="inline-flex rounded-md border border-slate-200 bg-slate-50 p-1">
+        <div class="inline-flex rounded-md border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-900">
           <button
             type="button"
             class="rounded px-3 py-1.5 text-sm font-semibold transition"
-            :class="activeView === 'catalog' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+            :class="activeView === 'catalog' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'"
             @click="emit('show-catalog')"
           >
             Catalog
@@ -78,7 +80,7 @@ const profileInitials = computed(() => {
             v-if="canViewVendor"
             type="button"
             class="rounded px-3 py-1.5 text-sm font-semibold transition"
-            :class="activeView === 'vendor' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+            :class="activeView === 'vendor' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'"
             @click="emit('show-vendor')"
           >
             Vendor
@@ -87,7 +89,7 @@ const profileInitials = computed(() => {
             v-if="canViewOrders"
             type="button"
             class="rounded px-3 py-1.5 text-sm font-semibold transition"
-            :class="activeView === 'orders' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+            :class="activeView === 'orders' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'"
             @click="emit('show-orders')"
           >
             Orders
@@ -96,7 +98,7 @@ const profileInitials = computed(() => {
             v-if="authStore.isAuthenticated"
             type="button"
             class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border text-xs font-semibold transition"
-            :class="activeView === 'profile' ? 'border-slate-950 bg-slate-950 text-white shadow-sm' : 'border-slate-300 bg-white text-slate-700 hover:border-slate-950 hover:text-slate-950'"
+            :class="activeView === 'profile' ? 'border-slate-950 bg-slate-950 text-white shadow-sm dark:border-slate-200 dark:bg-slate-200 dark:text-slate-950' : 'border-slate-300 bg-white text-slate-700 hover:border-slate-950 hover:text-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-200 dark:hover:text-white'"
             aria-label="Edit profile"
             title="Edit profile"
             @click="emit('show-profile')"
@@ -113,7 +115,7 @@ const profileInitials = computed(() => {
             v-if="showAuthLinks"
             type="button"
             class="rounded px-3 py-1.5 text-sm font-semibold transition"
-            :class="activeView === 'tenant-register' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+            :class="activeView === 'tenant-register' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'"
             @click="emit('show-tenant-register')"
           >
             Start selling
@@ -122,7 +124,7 @@ const profileInitials = computed(() => {
             v-if="showAuthLinks"
             type="button"
             class="rounded px-3 py-1.5 text-sm font-semibold transition"
-            :class="activeView === 'login' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+            :class="activeView === 'login' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'"
             @click="emit('show-login')"
           >
             Login
@@ -131,11 +133,12 @@ const profileInitials = computed(() => {
             v-if="showAuthLinks"
             type="button"
             class="rounded px-3 py-1.5 text-sm font-semibold transition"
-            :class="activeView === 'register' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+            :class="activeView === 'register' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'"
             @click="emit('show-register')"
           >
             Register
           </button>
+          <ThemeToggle />
         </div>
       </div>
     </div>
