@@ -32,12 +32,17 @@ export const useChatStore = defineStore('chat', {
       localStorage.setItem('chatSessionId', this.sessionId)
 
       try {
+        const headers = {
+          'Content-Type': 'application/json',
+        }
+
+        if (authStore.accessToken) {
+          headers.Authorization = `Bearer ${authStore.accessToken}`
+        }
+
         const response = await fetch(`${API_BASE_URL}/api/v1/chat/message/`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${authStore.accessToken}`,
-          },
+          headers,
           body: JSON.stringify({
             message,
             session_id: this.sessionId,

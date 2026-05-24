@@ -1,14 +1,11 @@
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue'
-import { useAuthStore } from '../stores/authStore'
+import { nextTick, ref, watch } from 'vue'
 import { useChatStore } from '../stores/chatStore'
 
-const authStore = useAuthStore()
 const chatStore = useChatStore()
 const isOpen = ref(false)
 const draft = ref('')
 const messageList = ref(null)
-const canChat = computed(() => authStore.isAuthenticated && authStore.role === 'customer')
 
 watch(
   () => chatStore.messages.length,
@@ -28,7 +25,7 @@ async function sendMessage() {
 </script>
 
 <template>
-  <div v-if="canChat" class="fixed bottom-6 right-6 z-50">
+  <div class="fixed bottom-6 right-6 z-50">
     <section
       v-if="isOpen"
       class="mb-3 flex h-[32rem] w-[22rem] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl"
@@ -37,7 +34,7 @@ async function sendMessage() {
       <header class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <div>
           <h2 class="text-sm font-semibold text-slate-950">Shopping assistant</h2>
-          <p class="text-xs text-slate-500">AI-generated estimate based on catalog data</p>
+          <p class="text-xs text-slate-500">Helper bot for this tech store</p>
         </div>
         <button
           type="button"
@@ -52,7 +49,7 @@ async function sendMessage() {
 
       <div ref="messageList" class="flex-1 space-y-3 overflow-y-auto bg-slate-50 px-4 py-4">
         <div v-if="chatStore.messages.length === 0" class="rounded border border-slate-200 bg-white p-3 text-sm text-slate-600">
-          Ask about laptops, phones, accessories, or product comparisons.
+          Hi, I am Vendora Assistant. Ask me about products, comparisons, shopping, login, cart, checkout, or selling here.
         </div>
         <div
           v-for="(message, index) in chatStore.messages"
