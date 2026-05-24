@@ -46,6 +46,7 @@ function closeCheckout() {
 
 function showCatalog() {
   isCheckoutOpen.value = false
+  selectedCategory.value = null
   selectedProductSlug.value = ''
   router.push({ name: 'catalog' })
 }
@@ -128,6 +129,8 @@ function selectCategory(category) {
   <div class="min-h-screen bg-slate-50 text-slate-950">
     <Header
       :active-view="activeView === 'order-detail' ? 'orders' : activeView"
+      :selected-category-slug="selectedCategory?.slug || ''"
+      @select-category="selectCategory"
       @show-catalog="showCatalog"
       @show-vendor="showVendor"
       @show-orders="showOrders"

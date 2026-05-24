@@ -76,6 +76,10 @@ function filtersToSearchParams(filters) {
 }
 
 function normalizePrice(value, fallback) {
+  if (value === null || value === '') {
+    return fallback
+  }
+
   const numericValue = Number(value)
 
   if (!Number.isFinite(numericValue)) {
@@ -243,12 +247,16 @@ onBeforeUnmount(() => {
   window.removeEventListener('catalog-search-change', handleSearchChange)
 })
 
-watch(() => props.selectedCategory?.slug, () => {
+watch(() => props.selectedCategory?.slug, (nextSlug, previousSlug) => {
+  if (!nextSlug && previousSlug === undefined) {
+    return
+  }
+
   activeFilters.value = {
     ...activeFilters.value,
-    category: props.selectedCategory?.slug || '',
+    category: nextSlug || '',
   }
-})
+}, { immediate: true })
 
 watch(activeFilters, () => {
   if (isApplyingUrlState) {
