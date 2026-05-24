@@ -1,1 +1,35 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+html {
+  transition: background-color 220ms ease, color 220ms ease;
+}
+
+body {
+  min-width: 320px;
+  transition: background-color 220ms ease, color 220ms ease;
+}
+
+button,
+a,
+input,
+section,
+header,
+footer,
+main {
+  transition-property: background-color, border-color, color, box-shadow, opacity, transform;
+  transition-duration: 180ms;
+  transition-timing-function: ease;
+}
+
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.page-fade-enter-from,
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
+}

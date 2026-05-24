@@ -32,19 +32,19 @@ const summaryCards = computed(() => [
   {
     label: 'Orders',
     value: formatNumber(readSummaryValue(['order_count', 'orders_count', 'total_orders'])),
-    tone: 'border-cyan-200 bg-cyan-50 text-cyan-800',
+    tone: 'border-cyan-200 bg-cyan-50 text-cyan-800 dark:border-cyan-800 dark:bg-cyan-950/50 dark:text-cyan-200',
   },
   {
     label: 'Revenue',
     value: formatCurrency(readSummaryValue(['revenue', 'total_revenue', 'gross_revenue'])),
-    tone: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    tone: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200',
   },
   {
     label: 'Low stock',
     value: formatNumber(readLowStockCount()),
     tone: readLowStockCount() > 0
-      ? 'border-amber-200 bg-amber-50 text-amber-800'
-      : 'border-slate-200 bg-slate-50 text-slate-700',
+      ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200'
+      : 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200',
   },
 ])
 
@@ -380,11 +380,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="min-w-0 flex-1 px-6 py-5">
-    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
+  <section class="min-w-0 flex-1 bg-white px-6 py-5 text-slate-950 dark:bg-slate-950 dark:text-slate-100">
+    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-700">
       <div>
-        <h1 class="text-xl font-semibold text-slate-950">Vendor Dashboard</h1>
-        <p class="mt-1 text-sm text-slate-500">Inventory, revenue, and low-stock status.</p>
+        <h1 class="text-xl font-semibold text-slate-950 dark:text-white">Vendor Dashboard</h1>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Inventory, revenue, and low-stock status.</p>
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
@@ -392,11 +392,11 @@ onBeforeUnmount(() => {
           v-model="authToken"
           type="password"
           placeholder="Bearer token"
-          class="h-10 w-52 rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-slate-500"
+          class="h-10 w-52 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none placeholder:text-slate-400 focus:border-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
         >
         <button
           type="button"
-          class="h-10 rounded-md border border-slate-200 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          class="h-10 rounded-md border border-slate-200 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
           :disabled="isLoadingSummary || isLoadingInventory || isLoadingOrderSummary"
           @click="refreshDashboard"
         >
@@ -419,7 +419,7 @@ onBeforeUnmount(() => {
 
     <p
       v-if="summaryError"
-      class="mb-5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+      class="mb-5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
     >
       {{ summaryError }}
     </p>
@@ -429,28 +429,28 @@ onBeforeUnmount(() => {
       <AnalyticsChat :auth-token="authToken" />
     </div>
 
-    <section class="mb-5 rounded-md border border-slate-200 bg-white">
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+    <section class="mb-5 rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
         <div>
-          <h2 class="text-sm font-semibold text-slate-950">Order Reports</h2>
-          <p class="mt-1 text-xs text-slate-500">Status breakdown from vendor order items</p>
+          <h2 class="text-sm font-semibold text-slate-950 dark:text-white">Order Reports</h2>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Status breakdown from vendor order items</p>
         </div>
-        <div class="text-right text-xs text-slate-500">
-          <p><span class="font-semibold text-slate-950">{{ formatNumber(orderSummaryTotal) }}</span> orders</p>
-          <p><span class="font-semibold text-slate-950">{{ formatCurrency(orderSummaryRevenue) }}</span> revenue</p>
+        <div class="text-right text-xs text-slate-500 dark:text-slate-400">
+          <p><span class="font-semibold text-slate-950 dark:text-white">{{ formatNumber(orderSummaryTotal) }}</span> orders</p>
+          <p><span class="font-semibold text-slate-950 dark:text-white">{{ formatCurrency(orderSummaryRevenue) }}</span> revenue</p>
         </div>
       </div>
 
       <div v-if="isLoadingOrderSummary" class="grid gap-4 p-4 md:grid-cols-[280px_minmax(0,1fr)]">
-        <div class="h-64 animate-pulse rounded-md bg-slate-50"></div>
+        <div class="h-64 animate-pulse rounded-md bg-slate-50 dark:bg-slate-800"></div>
         <div class="space-y-3">
-          <div v-for="item in 4" :key="item" class="h-12 animate-pulse rounded-md bg-slate-50"></div>
+          <div v-for="item in 4" :key="item" class="h-12 animate-pulse rounded-md bg-slate-50 dark:bg-slate-800"></div>
         </div>
       </div>
 
       <div
         v-else-if="orderSummaryError"
-        class="m-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+        class="m-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
       >
         {{ orderSummaryError }}
       </div>
@@ -459,8 +459,8 @@ onBeforeUnmount(() => {
         v-else-if="!hasOrderSummary"
         class="px-4 py-10 text-center"
       >
-        <p class="text-sm font-semibold text-slate-700">No order report data yet.</p>
-        <p class="mt-1 text-sm text-slate-500">Status totals will appear after orders are placed.</p>
+        <p class="text-sm font-semibold text-slate-700 dark:text-slate-100">No order report data yet.</p>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Status totals will appear after orders are placed.</p>
       </div>
 
       <div v-else class="grid gap-4 p-4 md:grid-cols-[280px_minmax(0,1fr)]">
@@ -468,24 +468,24 @@ onBeforeUnmount(() => {
           <canvas ref="orderChartCanvas" aria-label="Order status chart"></canvas>
           <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
             <div class="text-center">
-              <p class="text-2xl font-semibold text-slate-950">{{ formatNumber(orderSummaryTotal) }}</p>
-              <p class="text-xs font-medium text-slate-500">Orders</p>
+              <p class="text-2xl font-semibold text-slate-950 dark:text-white">{{ formatNumber(orderSummaryTotal) }}</p>
+              <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Orders</p>
             </div>
           </div>
         </div>
 
-        <div class="divide-y divide-slate-100">
+        <div class="divide-y divide-slate-100 dark:divide-slate-800">
           <div
             v-for="item in orderSummaryItems"
             :key="item.status"
             class="grid grid-cols-[minmax(0,1fr)_80px_110px] items-center gap-3 py-3 text-sm"
           >
             <div class="min-w-0">
-              <p class="truncate font-medium text-slate-950">{{ formatStatus(item.status) }}</p>
-              <p class="text-xs text-slate-500">{{ formatCurrency(item.total_amount) }}</p>
+              <p class="truncate font-medium text-slate-950 dark:text-slate-100">{{ formatStatus(item.status) }}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">{{ formatCurrency(item.total_amount) }}</p>
             </div>
-            <p class="text-right font-semibold text-slate-700">{{ formatNumber(item.count) }}</p>
-            <div class="h-2 rounded-full bg-slate-100">
+            <p class="text-right font-semibold text-slate-700 dark:text-slate-200">{{ formatNumber(item.count) }}</p>
+            <div class="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
               <div
                 class="h-2 rounded-full bg-cyan-600"
                 :style="{ width: `${orderSummaryTotal ? Math.max(8, (Number(item.count || 0) / orderSummaryTotal) * 100) : 0}%` }"
@@ -496,11 +496,11 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <section class="rounded-md border border-slate-200 bg-white">
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+    <section class="rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
         <div>
-          <h2 class="text-sm font-semibold text-slate-950">Inventory</h2>
-          <p class="mt-1 text-xs text-slate-500">{{ inventoryItems.length }} variants tracked</p>
+          <h2 class="text-sm font-semibold text-slate-950 dark:text-white">Inventory</h2>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ inventoryItems.length }} variants tracked</p>
         </div>
       </div>
 
@@ -508,13 +508,13 @@ onBeforeUnmount(() => {
         <div
           v-for="item in 5"
           :key="item"
-          class="h-16 animate-pulse rounded-md bg-slate-50"
+          class="h-16 animate-pulse rounded-md bg-slate-50 dark:bg-slate-800"
         ></div>
       </div>
 
       <div
         v-else-if="inventoryError"
-        class="m-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        class="m-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"
       >
         {{ inventoryError }}
       </div>
@@ -523,13 +523,13 @@ onBeforeUnmount(() => {
         v-else-if="!hasInventory"
         class="px-4 py-12 text-center"
       >
-        <p class="text-sm font-semibold text-slate-700">No inventory items found.</p>
-        <p class="mt-1 text-sm text-slate-500">Tracked product variants will appear here.</p>
+        <p class="text-sm font-semibold text-slate-700 dark:text-slate-100">No inventory items found.</p>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Tracked product variants will appear here.</p>
       </div>
 
       <div v-else class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
-          <thead class="bg-slate-50 text-xs font-semibold uppercase text-slate-500">
+        <table class="min-w-full divide-y divide-slate-200 text-left text-sm dark:divide-slate-700">
+          <thead class="bg-slate-50 text-xs font-semibold uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-400">
             <tr>
               <th class="px-4 py-3">Product</th>
               <th class="px-4 py-3">Variant</th>
@@ -541,24 +541,24 @@ onBeforeUnmount(() => {
               <th class="px-4 py-3 text-right">Action</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-100">
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
             <tr
               v-for="item in inventoryItems"
               :key="item.id"
-              class="hover:bg-slate-50"
+              class="hover:bg-slate-50 dark:hover:bg-slate-800/70"
             >
-              <td class="px-4 py-3 font-medium text-slate-950">{{ itemProductName(item) }}</td>
-              <td class="px-4 py-3 text-slate-600">{{ itemVariantName(item) }}</td>
-              <td class="px-4 py-3 font-mono text-xs text-slate-500">{{ itemSku(item) }}</td>
+              <td class="px-4 py-3 font-medium text-slate-950 dark:text-slate-100">{{ itemProductName(item) }}</td>
+              <td class="px-4 py-3 text-slate-600 dark:text-slate-300">{{ itemVariantName(item) }}</td>
+              <td class="px-4 py-3 font-mono text-xs text-slate-500 dark:text-slate-400">{{ itemSku(item) }}</td>
               <td class="px-4 py-3">
                 <input
                   v-model.number="quantityDrafts[item.id]"
                   type="number"
                   min="0"
-                  class="h-9 w-24 rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-slate-500"
+                  class="h-9 w-24 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none focus:border-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-500"
                 >
               </td>
-              <td class="px-4 py-3 text-slate-600">{{ itemThreshold(item) }}</td>
+              <td class="px-4 py-3 text-slate-600 dark:text-slate-300">{{ itemThreshold(item) }}</td>
               <td class="px-4 py-3">
                 <span
                   class="inline-flex min-w-24 justify-center rounded-md border px-2.5 py-1 text-xs font-semibold"
@@ -567,11 +567,11 @@ onBeforeUnmount(() => {
                   {{ isLowStock(item) ? 'Low stock' : 'In stock' }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-slate-500">{{ itemLastUpdated(item) }}</td>
+              <td class="px-4 py-3 text-slate-500 dark:text-slate-400">{{ itemLastUpdated(item) }}</td>
               <td class="px-4 py-3 text-right">
                 <button
                   type="button"
-                  class="h-9 rounded-md bg-slate-950 px-3 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  class="h-9 rounded-md bg-slate-950 px-3 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
                   :disabled="savingItemId === item.id || Number(quantityDrafts[item.id]) === itemQuantity(item)"
                   @click="saveQuantity(item)"
                 >
