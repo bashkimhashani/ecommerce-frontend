@@ -32,6 +32,10 @@ const ratingLabel = computed(() => {
   return Number(props.product.avg_rating).toFixed(1)
 })
 
+const vendorName = computed(() => {
+  return props.product.vendor?.store_name || props.product.vendor_name || ''
+})
+
 function toggleWishlist() {
   isWishlisted.value = !isWishlisted.value
   emit('toggle-wishlist', {
@@ -99,6 +103,14 @@ watch(() => props.product.is_wishlisted, (nextValue) => {
 
       <p class="mt-1 truncate text-xs text-slate-500">
         {{ product.slug }}
+      </p>
+
+      <p
+        v-if="vendorName"
+        class="mt-3 truncate rounded-md border border-cyan-100 bg-cyan-50 px-2 py-1 text-xs font-medium text-cyan-800"
+        :title="`Added by ${vendorName}`"
+      >
+        Added by {{ vendorName }}
       </p>
 
       <div class="mt-auto flex items-center justify-between gap-3 pt-4">
