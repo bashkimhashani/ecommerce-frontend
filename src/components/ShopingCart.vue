@@ -154,7 +154,7 @@ onMounted(loadCart)
 <template>
   <div>
     <button
-      class="fixed right-5 top-5 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-950 text-white shadow-lg transition hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2"
+      class="fixed right-5 top-5 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-950 text-white shadow-lg transition hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-300 dark:focus:ring-offset-slate-950"
       type="button"
       aria-label="Open cart"
       @click="openDrawer"
@@ -176,24 +176,24 @@ onMounted(loadCart)
 
     <div
       v-if="isOpen"
-      class="fixed inset-0 z-40 bg-neutral-950/45"
+      class="fixed inset-0 z-40 bg-neutral-950/55"
       aria-hidden="true"
       @click="closeDrawer"
     />
 
     <aside
       v-if="isOpen"
-      class="fixed right-0 top-0 z-50 flex h-full w-full max-w-md transform flex-col bg-white shadow-2xl transition-transform duration-200"
+      class="fixed right-0 top-0 z-50 flex h-full w-full max-w-md transform flex-col bg-white text-neutral-950 shadow-2xl transition-transform duration-200 dark:bg-slate-950 dark:text-slate-100"
       aria-label="Shopping cart"
     >
-      <header class="flex items-center justify-between border-b border-neutral-200 px-5 py-4">
+      <header class="flex items-center justify-between border-b border-neutral-200 px-5 py-4 dark:border-slate-700">
         <div>
-          <h2 class="text-lg font-semibold text-neutral-950">Cart</h2>
-          <p class="text-sm text-neutral-500">{{ itemCount }} items</p>
+          <h2 class="text-lg font-semibold text-neutral-950 dark:text-white">Cart</h2>
+          <p class="text-sm text-neutral-500 dark:text-slate-400">{{ itemCount }} items</p>
         </div>
 
         <button
-          class="flex h-10 w-10 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+          class="flex h-10 w-10 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white dark:focus:ring-slate-700"
           type="button"
           aria-label="Close cart"
           @click="closeDrawer"
@@ -204,19 +204,19 @@ onMounted(loadCart)
         </button>
       </header>
 
-      <div v-if="errorMessage" class="mx-5 mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+      <div v-if="errorMessage" class="mx-5 mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
         {{ errorMessage }}
       </div>
 
       <div class="flex-1 overflow-y-auto px-5 py-4">
         <div v-if="isLoading" class="space-y-3">
-          <div v-for="index in 3" :key="index" class="h-24 animate-pulse rounded-md bg-neutral-100" />
+          <div v-for="index in 3" :key="index" class="h-24 animate-pulse rounded-md bg-neutral-100 dark:bg-slate-800" />
         </div>
 
         <div v-else-if="!cart.items.length" class="flex h-full items-center justify-center text-center">
           <div>
-            <p class="text-base font-medium text-neutral-950">Your cart is empty</p>
-            <p class="mt-1 text-sm text-neutral-500">Add tech products to see them here.</p>
+            <p class="text-base font-medium text-neutral-950 dark:text-white">Your cart is empty</p>
+            <p class="mt-1 text-sm text-neutral-500 dark:text-slate-400">Add tech products to see them here.</p>
           </div>
         </div>
 
@@ -224,23 +224,23 @@ onMounted(loadCart)
           <li
             v-for="item in cart.items"
             :key="item.id"
-            class="rounded-md border border-neutral-200 p-3"
+            class="rounded-md border border-neutral-200 p-3 dark:border-slate-700 dark:bg-slate-900"
           >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
-                <h3 class="truncate text-sm font-semibold text-neutral-950">
+                <h3 class="truncate text-sm font-semibold text-neutral-950 dark:text-white">
                   {{ item.product_name || `Variant #${item.product_variant_id}` }}
                 </h3>
-                <p v-if="item.variant_label" class="mt-0.5 truncate text-xs text-neutral-500">
+                <p v-if="item.variant_label" class="mt-0.5 truncate text-xs text-neutral-500 dark:text-slate-400">
                   {{ item.variant_label }}
                 </p>
-                <p class="mt-2 text-sm font-medium text-neutral-900">
+                <p class="mt-2 text-sm font-medium text-neutral-900 dark:text-slate-200">
                   ${{ Number(item.unit_price).toFixed(2) }}
                 </p>
               </div>
 
               <button
-                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-500 dark:hover:bg-red-950/40 dark:hover:text-red-300 dark:focus:ring-red-900"
                 type="button"
                 aria-label="Remove item"
                 :disabled="isPending(item)"
@@ -253,9 +253,9 @@ onMounted(loadCart)
             </div>
 
             <div class="mt-4 flex items-center justify-between gap-3">
-              <div class="grid h-10 grid-cols-[40px_48px_40px] overflow-hidden rounded-md border border-neutral-300">
+              <div class="grid h-10 grid-cols-[40px_48px_40px] overflow-hidden rounded-md border border-neutral-300 dark:border-slate-700">
                 <button
-                  class="flex items-center justify-center text-lg text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:text-neutral-300"
+                  class="flex items-center justify-center text-lg text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:text-neutral-300 dark:text-slate-200 dark:hover:bg-slate-800 dark:disabled:text-slate-600"
                   type="button"
                   aria-label="Decrease quantity"
                   :disabled="item.quantity <= 1 || isPending(item)"
@@ -263,11 +263,11 @@ onMounted(loadCart)
                 >
                   -
                 </button>
-                <output class="flex items-center justify-center border-x border-neutral-300 text-sm font-semibold text-neutral-950">
+                <output class="flex items-center justify-center border-x border-neutral-300 text-sm font-semibold text-neutral-950 dark:border-slate-700 dark:text-white">
                   {{ item.quantity }}
                 </output>
                 <button
-                  class="flex items-center justify-center text-lg text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:text-neutral-300"
+                  class="flex items-center justify-center text-lg text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:text-neutral-300 dark:text-slate-200 dark:hover:bg-slate-800 dark:disabled:text-slate-600"
                   type="button"
                   aria-label="Increase quantity"
                   :disabled="isPending(item)"
@@ -277,7 +277,7 @@ onMounted(loadCart)
                 </button>
               </div>
 
-              <p class="text-sm font-semibold text-neutral-950">
+              <p class="text-sm font-semibold text-neutral-950 dark:text-white">
                 ${{ Number(item.line_total).toFixed(2) }}
               </p>
             </div>
@@ -285,13 +285,13 @@ onMounted(loadCart)
         </ul>
       </div>
 
-      <footer class="border-t border-neutral-200 p-5">
-        <div class="flex items-center justify-between text-base font-semibold text-neutral-950">
+      <footer class="border-t border-neutral-200 p-5 dark:border-slate-700">
+        <div class="flex items-center justify-between text-base font-semibold text-neutral-950 dark:text-white">
           <span>Subtotal</span>
           <span>${{ subtotal }}</span>
         </div>
         <button
-          class="mt-4 h-11 w-full rounded-md bg-emerald-600 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
+          class="mt-4 h-11 w-full rounded-md bg-emerald-600 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-neutral-300 dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
           type="button"
           :disabled="!itemCount"
           @click="startCheckout"

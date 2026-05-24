@@ -105,15 +105,15 @@ onMounted(loadCategories)
 </script>
 
 <template>
-  <aside class="w-full shrink-0 border-b border-slate-200 bg-white lg:w-72 lg:border-b-0 lg:border-r">
+  <aside class="w-full shrink-0 border-b border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950 lg:w-72 lg:border-b-0 lg:border-r">
     <div class="space-y-5 p-4">
       <div class="flex items-center justify-between gap-3">
-        <h2 class="text-sm font-semibold uppercase text-slate-500">
+        <h2 class="text-sm font-semibold uppercase text-slate-500 dark:text-slate-400">
           Filters
         </h2>
         <button
           type="button"
-          class="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+          class="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
           :disabled="!hasActiveFilters"
           @click="clearFilters"
         >
@@ -123,16 +123,16 @@ onMounted(loadCategories)
 
       <section class="space-y-3">
         <div class="flex items-center justify-between">
-          <h3 class="text-sm font-semibold text-slate-900">
+          <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
             Price
           </h3>
-          <span class="text-xs font-medium text-slate-500">
+          <span class="text-xs font-medium text-slate-500 dark:text-slate-400">
             ${{ minPrice }} - ${{ maxPrice }}
           </span>
         </div>
 
         <div class="space-y-3">
-          <label class="block text-xs font-medium text-slate-500">
+          <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">
             Minimum
             <input
               v-model.number="minPrice"
@@ -140,11 +140,11 @@ onMounted(loadCategories)
               min="0"
               max="3000"
               step="50"
-              class="mt-2 w-full accent-slate-900"
+              class="mt-2 w-full accent-slate-900 dark:accent-slate-200"
               @change="updatePriceRange"
             >
           </label>
-          <label class="block text-xs font-medium text-slate-500">
+          <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">
             Maximum
             <input
               v-model.number="maxPrice"
@@ -152,7 +152,7 @@ onMounted(loadCategories)
               min="0"
               max="3000"
               step="50"
-              class="mt-2 w-full accent-slate-900"
+              class="mt-2 w-full accent-slate-900 dark:accent-slate-200"
               @change="updatePriceRange"
             >
           </label>
@@ -160,40 +160,40 @@ onMounted(loadCategories)
       </section>
 
       <section class="space-y-3">
-        <h3 class="text-sm font-semibold text-slate-900">
+        <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
           Brands
         </h3>
         <div v-if="facets.brands?.length" class="space-y-2">
           <label
             v-for="brand in facets.brands"
             :key="brand.slug"
-            class="flex items-center justify-between gap-3 rounded-md border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50"
+            class="flex items-center justify-between gap-3 rounded-md border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-900"
           >
             <span class="flex min-w-0 items-center gap-2">
               <input
                 type="checkbox"
-                class="h-4 w-4 rounded border-slate-300 text-slate-900"
+                class="h-4 w-4 rounded border-slate-300 text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
                 :checked="modelValue.brand === brand.slug"
                 @change="toggleBrand(brand.slug)"
               >
-              <span class="truncate text-slate-700">{{ brand.name }}</span>
+              <span class="truncate text-slate-700 dark:text-slate-200">{{ brand.name }}</span>
             </span>
-            <span class="shrink-0 text-xs font-medium text-slate-500">
+            <span class="shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">
               {{ brand.count }}
             </span>
           </label>
         </div>
-        <p v-else class="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-500">
+        <p v-else class="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-500 dark:bg-slate-900 dark:text-slate-400">
           No brand facets yet.
         </p>
       </section>
 
       <section class="space-y-3">
-        <h3 class="text-sm font-semibold text-slate-900">
+        <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
           Category
         </h3>
         <select
-          class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-slate-400"
+          class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-500"
           :value="modelValue.category || ''"
           @change="updateFilter('category', $event.target.value)"
         >
@@ -206,10 +206,10 @@ onMounted(loadCategories)
             {{ `${'-- '.repeat(category.depth)}${category.name}` }}
           </option>
         </select>
-        <p v-if="isLoadingCategories" class="text-xs text-slate-500">
+        <p v-if="isLoadingCategories" class="text-xs text-slate-500 dark:text-slate-400">
           Loading categories...
         </p>
-        <p v-else-if="categoryError" class="text-xs text-red-600">
+        <p v-else-if="categoryError" class="text-xs text-red-600 dark:text-red-300">
           {{ categoryError }}
         </p>
       </section>

@@ -1,7 +1,8 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref , watch} from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+import AppFooter from './components/AppFooter.vue'
 import CategoryTree from './components/CategoryTree.vue'
 import ChatWidget from './components/ChatWidget.vue'
 import CheckoutWizard from './components/CheckoutWizard.vue'
@@ -18,6 +19,13 @@ import ResetPasswordPage from './components/ResetPasswordPage.vue'
 import ShopingCart from './components/ShopingCart.vue'
 import TenantRegistrationPage from './components/TenantRegistrationPage.vue'
 import VendorDashboard from './components/VendorDashboard.vue'
+import { useAuthStore } from './stores/authStore'
+import { useThemeStore } from './stores/themeStore'
+
+const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
+const themeStore = useThemeStore()
 import WishlistPage from './components/WishlistPage.vue'
 import { useWishlistStore } from './stores/wishlistStore'
 
@@ -132,6 +140,10 @@ function openProductFromChat(slug) {
   showProduct(slug)
 }
 
+watch(
+  () => authStore.user?.id || authStore.user?.email || 'guest',
+  () => themeStore.syncForCurrentUser(),
+)
 function updateScrollTopVisibility() {
   isScrollTopVisible.value = window.scrollY > 420
 }
@@ -154,7 +166,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50 text-slate-950">
+  <div class="flex min-h-screen flex-col bg-slate-50 text-slate-950 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
     <Header
       :active-view="activeView === 'order-detail' ? 'orders' : activeView === 'product-detail' ? 'catalog' : activeView"
       :selected-category-slug="selectedCategory?.slug || ''"
@@ -170,6 +182,67 @@ onBeforeUnmount(() => {
       @show-tenant-register="showTenantRegister"
     />
 
+    <Transition name="page-fade" mode="out-in">
+      <CheckoutWizard v-if="isCheckoutOpen" @close="closeCheckout" />
+
+      <LoginPage
+        v-else-if="activeView === 'login'"
+        @forgot-password="showForgotPassword"
+        @login-success="handleLoginSuccess"
+      />
+
+      <ForgotPasswordPage
+        v-else-if="activeView === 'forgot-password'"
+        @back-to-login="showLogin"
+      />
+
+      <ResetPasswordPage
+        v-else-if="activeView === 'reset-password'"
+        :uid="resetPasswordUid"
+        :token="resetPasswordToken"
+        @back-to-login="showLogin"
+      />
+
+      <RegisterPage v-else-if="activeView === 'register'" @register-success="handleRegisterSuccess" />
+
+      <TenantRegistrationPage
+        v-else-if="activeView === 'tenant-register'"
+        @tenant-register-success="handleTenantRegisterSuccess"
+      />
+
+      <OrderHistory v-else-if="activeView === 'orders'" @view-order="showOrderDetail" />
+
+      <ProfileEditPage v-else-if="activeView === 'profile'" />
+
+      <OrderDetail
+        v-else-if="activeView === 'order-detail'"
+        :order-number="selectedOrderNumber"
+        @back="showOrders"
+      />
+
+      <div v-else class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white transition-colors duration-300 dark:border-slate-800 dark:bg-slate-900">
+        <main class="flex w-full bg-white transition-colors duration-300 dark:bg-slate-900">
+          <VendorDashboard v-if="activeView === 'vendor'" />
+          <template v-else>
+            <CategoryTree @select="selectCategory" />
+            <ProductDetailPage
+              v-if="selectedProductSlug"
+              :slug="selectedProductSlug"
+              @back="showCatalog"
+            />
+            <ProductListingPage
+              v-else
+              :selected-category="selectedCategory"
+              @view-product="showProduct"
+            />
+          </template>
+        </main>
+      </div>
+    </Transition>
+
+    <ShopingCart v-if="!isCheckoutOpen" @checkout="openCheckout" />
+    <ChatWidget @view-product="openProductFromChat" />
+    <AppFooter />
     <CheckoutWizard v-if="isCheckoutOpen" @close="closeCheckout" />
 
     <LoginPage

@@ -72,9 +72,9 @@ const saveIndicatorClass = computed(() => {
     return 'border-emerald-200 bg-emerald-50 text-emerald-700'
   }
   if (hasChanges.value) {
-    return 'border-slate-300 bg-white text-slate-700'
+    return 'border-slate-300 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200'
   }
-  return 'border-slate-200 bg-slate-50 text-slate-500'
+  return 'border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
 })
 
 function authorizationHeaders() {
@@ -255,13 +255,13 @@ onBeforeUnmount(clearAvatarPreview)
 </script>
 
 <template>
-  <main class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white">
-    <section class="min-h-[calc(100vh-81px)] bg-white px-5 py-8 sm:px-8 lg:px-12">
-      <div class="flex flex-col gap-5 border-b border-slate-200 pb-6 lg:flex-row lg:items-end lg:justify-between">
+  <main class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+    <section class="bg-white px-5 py-8 text-slate-950 dark:bg-slate-950 dark:text-slate-100 sm:px-8 lg:px-12">
+      <div class="flex flex-col gap-5 border-b border-slate-200 pb-6 dark:border-slate-700 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p class="text-sm font-semibold uppercase text-emerald-700">Account profile</p>
-          <h1 class="mt-3 text-3xl font-semibold text-slate-950">Edit your profile</h1>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+          <p class="text-sm font-semibold uppercase text-emerald-700 dark:text-emerald-300">Account profile</p>
+          <h1 class="mt-3 text-3xl font-semibold text-slate-950 dark:text-white">Edit your profile</h1>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
             Keep your contact details and profile photo current across Vendora.
           </p>
         </div>
@@ -278,15 +278,15 @@ onBeforeUnmount(clearAvatarPreview)
 
       <div
         v-if="isLoading"
-        class="mt-8 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"
+        class="mt-8 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
       >
         Loading profile...
       </div>
 
       <form v-else class="mt-8 grid gap-8 lg:grid-cols-[320px_minmax(0,1fr)]" @submit.prevent="saveProfile">
-        <aside class="border-r border-slate-200 pr-0 lg:pr-8">
+        <aside class="border-r border-slate-200 pr-0 dark:border-slate-700 lg:pr-8">
           <div class="flex flex-col items-start gap-5">
-            <div class="relative h-32 w-32 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+            <div class="relative h-32 w-32 overflow-hidden rounded-full border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-900">
               <img
                 v-if="avatarUrl"
                 class="h-full w-full object-cover"
@@ -295,7 +295,7 @@ onBeforeUnmount(clearAvatarPreview)
               >
               <div
                 v-else
-                class="flex h-full w-full items-center justify-center bg-slate-950 text-3xl font-semibold text-white"
+                class="flex h-full w-full items-center justify-center bg-slate-950 text-3xl font-semibold text-white dark:bg-slate-100 dark:text-slate-950"
                 aria-hidden="true"
               >
                 {{ initials }}
@@ -312,13 +312,13 @@ onBeforeUnmount(clearAvatarPreview)
               >
               <button
                 type="button"
-                class="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:border-slate-950 hover:text-slate-950"
+                class="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:border-slate-950 hover:text-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-300 dark:hover:text-white"
                 @click="chooseAvatar"
               >
                 Upload avatar
               </button>
-              <p class="mt-2 text-sm text-slate-500">JPG, PNG, or WebP under 5 MB.</p>
-              <p v-if="fieldErrors.avatar" class="mt-2 text-sm text-red-600">
+              <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">JPG, PNG, or WebP under 5 MB.</p>
+              <p v-if="fieldErrors.avatar" class="mt-2 text-sm text-red-600 dark:text-red-300">
                 {{ fieldErrors.avatar }}
               </p>
             </div>
@@ -328,7 +328,7 @@ onBeforeUnmount(clearAvatarPreview)
         <div class="max-w-2xl">
           <div
             v-if="errorMessage"
-            class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"
             role="alert"
           >
             {{ errorMessage }}
@@ -336,79 +336,79 @@ onBeforeUnmount(clearAvatarPreview)
 
           <div class="mt-0 grid gap-5 sm:grid-cols-2" :class="errorMessage ? 'mt-6' : ''">
             <div>
-              <label class="block text-sm font-medium text-slate-700" for="profile-first-name">
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-200" for="profile-first-name">
                 First name
               </label>
               <input
                 id="profile-first-name"
                 v-model="form.firstName"
-                class="mt-2 block w-full rounded-md border px-3 py-2.5 text-sm text-slate-950 outline-none transition focus:border-slate-950"
-                :class="fieldErrors.firstName ? 'border-red-300' : 'border-slate-300'"
+                class="mt-2 block w-full rounded-md border bg-white px-3 py-2.5 text-sm text-slate-950 outline-none transition focus:border-slate-950 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-300"
+                :class="fieldErrors.firstName ? 'border-red-300 dark:border-red-700' : 'border-slate-300 dark:border-slate-700'"
                 type="text"
                 autocomplete="given-name"
                 required
               >
-              <p v-if="fieldErrors.firstName" class="mt-1 text-xs text-red-600">
+              <p v-if="fieldErrors.firstName" class="mt-1 text-xs text-red-600 dark:text-red-300">
                 {{ fieldErrors.firstName }}
               </p>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-slate-700" for="profile-last-name">
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-200" for="profile-last-name">
                 Last name
               </label>
               <input
                 id="profile-last-name"
                 v-model="form.lastName"
-                class="mt-2 block w-full rounded-md border px-3 py-2.5 text-sm text-slate-950 outline-none transition focus:border-slate-950"
-                :class="fieldErrors.lastName ? 'border-red-300' : 'border-slate-300'"
+                class="mt-2 block w-full rounded-md border bg-white px-3 py-2.5 text-sm text-slate-950 outline-none transition focus:border-slate-950 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-300"
+                :class="fieldErrors.lastName ? 'border-red-300 dark:border-red-700' : 'border-slate-300 dark:border-slate-700'"
                 type="text"
                 autocomplete="family-name"
                 required
               >
-              <p v-if="fieldErrors.lastName" class="mt-1 text-xs text-red-600">
+              <p v-if="fieldErrors.lastName" class="mt-1 text-xs text-red-600 dark:text-red-300">
                 {{ fieldErrors.lastName }}
               </p>
             </div>
           </div>
 
-          <label class="mt-5 block text-sm font-medium text-slate-700" for="profile-email">
+          <label class="mt-5 block text-sm font-medium text-slate-700 dark:text-slate-200" for="profile-email">
             Email
           </label>
           <input
             id="profile-email"
-            class="mt-2 block w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-500 outline-none"
+            class="mt-2 block w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-500 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
             type="email"
             :value="profile?.email || ''"
             autocomplete="email"
             disabled
           >
 
-          <label class="mt-5 block text-sm font-medium text-slate-700" for="profile-phone">
+          <label class="mt-5 block text-sm font-medium text-slate-700 dark:text-slate-200" for="profile-phone">
             Phone
           </label>
           <input
             id="profile-phone"
             v-model="form.phone"
-            class="mt-2 block w-full rounded-md border px-3 py-2.5 text-sm text-slate-950 outline-none transition focus:border-slate-950"
-            :class="fieldErrors.phone ? 'border-red-300' : 'border-slate-300'"
+            class="mt-2 block w-full rounded-md border bg-white px-3 py-2.5 text-sm text-slate-950 outline-none transition focus:border-slate-950 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-300"
+            :class="fieldErrors.phone ? 'border-red-300 dark:border-red-700' : 'border-slate-300 dark:border-slate-700'"
             type="tel"
             autocomplete="tel"
             placeholder="+1 555 0100"
           >
-          <p v-if="fieldErrors.phone" class="mt-1 text-xs text-red-600">
+          <p v-if="fieldErrors.phone" class="mt-1 text-xs text-red-600 dark:text-red-300">
             {{ fieldErrors.phone }}
           </p>
 
-          <div class="mt-7 flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:items-center">
+          <div class="mt-7 flex flex-col gap-3 border-t border-slate-200 pt-6 dark:border-slate-700 sm:flex-row sm:items-center">
             <button
-              class="inline-flex h-11 items-center justify-center rounded-md bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+              class="inline-flex h-11 items-center justify-center rounded-md bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
               type="submit"
               :disabled="!canSave"
             >
               {{ isSaving ? 'Saving...' : 'Save changes' }}
             </button>
-            <p class="text-sm text-slate-500" aria-live="polite">
+            <p class="text-sm text-slate-500 dark:text-slate-400" aria-live="polite">
               {{ successMessage || (hasChanges ? 'Review your changes before saving.' : 'No changes pending.') }}
             </p>
           </div>
