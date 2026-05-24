@@ -35,6 +35,7 @@ const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const errorMessage = ref('')
 const loadMoreMarker = ref(null)
+const wishlistStore = useWishlistStore()
 let observer = null
 let isApplyingUrlState = false
 
@@ -323,6 +324,7 @@ watch(activeFilters, () => {
               :key="product.id"
               :product="product"
               @view="emit('view-product', $event)"
+              @toggle-wishlist="handleWishlistToggle"
             />
           </div>
 
