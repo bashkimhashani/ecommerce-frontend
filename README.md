@@ -1,62 +1,76 @@
 # Vendora Frontend
 
-Vendora Frontend is the Vue 3 single-page application for the Vendora
-multi-tenant ecommerce platform. It provides customer shopping flows, auth
-screens, checkout, order history, vendor views, and AI chat UI.
+Vendora Frontend is the Vue application for a multi-tenant ecommerce platform
+focused on technology products. It provides customer shopping flows, checkout,
+account management, vendor workflows, and AI-assisted experiences on top of the
+Django REST API.
 
-## Project Overview
-
-The frontend supports:
-
-- Product catalog browsing with category navigation, search, filters, and product details
-- Shopping cart drawer with quantity updates and item removal
-- Customer authentication, registration, password reset, and profile editing
-- Multi-step checkout with address, payment, and confirmation steps
-- Stripe Elements card form
-- Customer order history and order detail timeline
-- Vendor dashboard, inventory, product management, analytics, and order workflows
-- AI chat widget and vendor analytics chat
-- Role-aware navigation guards
-
-The app communicates with the Django backend through REST endpoints under
-`/api/v1/*`.
-
-## Tech Stack
-
-- Vue 3
-- Vite
-- Pinia
-- Vue Router
-- Tailwind CSS
-- Vitest
-- Stripe.js
-- Chart.js
-
-## Related Repositories
-
-The full project uses three sibling repositories:
+This repository is one part of the Vendora system:
 
 ```text
 Vendora/
-  ecommerce-backend/
-  ecommerce-frontend/
-  ecommerce-infra/
+  ecommerce-backend/    Django REST API
+  ecommerce-frontend/   Vue customer and vendor interface
+  ecommerce-infra/      Docker Compose and local environment orchestration
 ```
 
-For normal development, start the project from `ecommerce-infra` with Docker
-Compose.
+## Product Experience
 
-## Local Setup With Docker
+The frontend is designed around two main audiences:
 
-Clone all repositories into the same parent folder:
+- Customers browsing products, managing carts, checking out, and tracking orders
+- Vendors managing inventory, reviewing orders, and using dashboard/analytics tools
 
-```bash
-git clone https://github.com/bashkimhashani/ecommerce-backend.git
-git clone https://github.com/bashkimhashani/ecommerce-frontend.git
-git clone https://github.com/bashkimhashani/ecommerce-infra.git
+Key areas include:
+
+- Catalog browsing with category navigation, search, price filters, brand facets, and product detail pages
+- Product image display from backend media URLs
+- Cart drawer with quantity controls and remove actions
+- Authentication screens for login, registration, password reset, and tenant registration
+- Profile editing with avatar upload
+- Multi-step checkout with address, payment, and confirmation states
+- Stripe Elements card form in the payment step
+- Customer order history, status filters, order detail timeline, and event log
+- Vendor dashboard, inventory, product management, order workflows, exports, and analytics
+- AI chat widget and vendor analytics chat
+- Role-aware navigation guards for customer, vendor, and protected routes
+
+## Tech Stack
+
+| Area | Technology |
+| --- | --- |
+| Framework | Vue 3 |
+| Build tool | Vite |
+| State | Pinia |
+| Routing | Vue Router |
+| Styling | Tailwind CSS |
+| Payments | Stripe.js |
+| Charts | Chart.js |
+| Testing | Vitest, jsdom |
+
+## Backend Integration
+
+The app calls the backend through REST endpoints under `/api/v1/`. The default
+API base URL is:
+
+```text
+http://localhost:8000
 ```
 
-Start the full stack:
+Optional frontend environment values:
+
+```env
+VITE_API_BASE_URL=http://localhost:8000
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_replace_me
+```
+
+When using Docker Compose, the frontend is served at `http://localhost:5173`.
+Use `localhost`, not `127.0.0.1`, so browser requests match the backend CORS
+configuration.
+
+## Local Development With Docker
+
+Use the infrastructure repository for the full stack:
 
 ```bash
 cd path/to/Vendora/ecommerce-infra
@@ -72,33 +86,20 @@ Open:
 http://localhost:5173
 ```
 
-Use `localhost`, not `127.0.0.1`, because backend CORS is configured for
-`http://localhost:5173`.
+The seed command prepares demo users and data for local testing. Credentials
+should be shared through the team channel or read from the seed command output,
+not committed to documentation.
 
-## Local Setup Without Docker
+## Local Development Without Docker
 
-Use this only when working on frontend UI separately:
+Use this mode only when working on frontend UI while the backend is already
+running:
 
 ```bash
 cd path/to/Vendora/ecommerce-frontend
 npm install
 npm run dev
 ```
-
-The default backend URL is:
-
-```text
-http://localhost:8000
-```
-
-Optional local `.env` values:
-
-```env
-VITE_API_BASE_URL=http://localhost:8000
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_replace_me
-```
-
-The backend must still be running for API-backed screens to work.
 
 ## Scripts
 
@@ -109,7 +110,7 @@ npm run preview
 npm run test
 ```
 
-In Docker, run frontend commands through the `frontend` service:
+When running through Docker:
 
 ```bash
 cd path/to/Vendora/ecommerce-infra
@@ -117,34 +118,33 @@ docker compose exec frontend npm run test
 docker compose exec frontend npm run build
 ```
 
-## Main Source Areas
+## Source Layout
 
-- `src/components` - page and UI components
-- `src/stores` - Pinia stores for auth, chat, wishlist, and theme state
-- `src/router` - Vue Router routes and role-based guards
-- `src/assets` - static frontend assets
+| Path | Purpose |
+| --- | --- |
+| `src/components` | Page-level and reusable UI components |
+| `src/stores` | Pinia stores for auth, chat, theme, wishlist, and shared state |
+| `src/router` | Routes and role-based navigation guards |
+| `src/assets` | Static frontend assets |
+| `src/main.js` | Vue app bootstrap |
 
-## Demo Accounts
+## Quality Checks
 
-After the backend seed command runs:
+Run unit tests:
 
-```text
-admin@example.com
-vendor@example.com
-gaming.vendor@example.com
-office.vendor@example.com
-customer@example.com
+```bash
+npm run test
 ```
 
-Password:
+Build production assets:
 
-```text
-DemoPass123!
+```bash
+npm run build
 ```
 
 ## Troubleshooting
 
-If the catalog says `Failed to fetch`, confirm the backend is running:
+If the UI shows `Failed to fetch`, confirm the backend is running:
 
 ```bash
 cd path/to/Vendora/ecommerce-infra
@@ -152,30 +152,22 @@ docker compose ps
 docker compose logs -f web
 ```
 
-If products appear without images, refresh backend seed data:
+If products load without images, reseed backend demo data:
 
 ```bash
 docker compose exec web python manage.py seed_demo_data
 ```
 
-If route guards redirect unexpectedly, verify the logged-in user's role and run:
+If protected pages redirect unexpectedly, verify the logged-in user's role and
+run the router tests:
 
 ```bash
 npm run test
 ```
 
-## Git Workflow
+## Development Notes
 
-```bash
-git checkout main
-git pull origin main
-git checkout -b feature/yourname/task-name
-```
-
-Commit and push:
-
-```bash
-git add .
-git commit -m "type: describe the change"
-git push origin feature/yourname/task-name
-```
+- Keep UI behavior aligned with backend permissions and API responses.
+- Prefer reusable components and existing Pinia stores before adding new global state.
+- Keep customer, vendor, and admin navigation paths clear and role-aware.
+- Do not commit `node_modules`, local `.env` files, or build artifacts unless the team explicitly agrees.
