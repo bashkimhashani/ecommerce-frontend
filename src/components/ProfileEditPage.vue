@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useAuthStore } from '../stores/authStore'
+import ThemeToggle from './ThemeToggle.vue'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024
@@ -321,6 +322,23 @@ onBeforeUnmount(clearAvatarPreview)
               <p v-if="fieldErrors.avatar" class="mt-2 text-sm text-red-600 dark:text-red-300">
                 {{ fieldErrors.avatar }}
               </p>
+            </div>
+
+            <div class="w-full rounded-2xl border border-cyan-100 bg-cyan-50/70 p-4 dark:border-cyan-400/10 dark:bg-slate-900">
+              <p class="text-xs font-bold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-300">
+                Display
+              </p>
+              <div class="mt-3 flex items-center justify-between gap-3">
+                <div>
+                  <p class="text-sm font-semibold text-slate-900 dark:text-white">
+                    Theme mode
+                  </p>
+                  <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    Switch between light and dark storefront views.
+                  </p>
+                </div>
+                <ThemeToggle />
+              </div>
             </div>
           </div>
         </aside>
