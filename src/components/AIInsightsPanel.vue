@@ -1,79 +1,85 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from "vue";
 
 const props = defineProps({
   authToken: {
     type: String,
-    default: '',
+    default: "",
   },
   refreshKey: {
     type: Number,
     default: 0,
   },
-})
+});
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-const report = ref(null)
-const isLoading = ref(false)
-const error = ref('')
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const report = ref(null);
+const isLoading = ref(false);
+const error = ref("");
 
 const generatedAt = computed(() => {
   if (!report.value?.generated_at) {
-    return ''
+    return "";
   }
 
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(report.value.generated_at))
-})
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(report.value.generated_at));
+});
 
 function authHeaders() {
-  return props.authToken ? { Authorization: `Bearer ${props.authToken}` } : {}
+  return props.authToken ? { Authorization: `Bearer ${props.authToken}` } : {};
 }
 
 async function fetchLatestReport() {
-  isLoading.value = true
-  error.value = ''
+  isLoading.value = true;
+  error.value = "";
 
   try {
     const response = await fetch(`${apiBaseUrl}/api/v1/vendor/reports/latest/`, {
       headers: authHeaders(),
-    })
+    });
 
     if (response.status === 204) {
-      report.value = null
-      return
+      report.value = null;
+      return;
     }
 
     if (!response.ok) {
-      throw new Error('Could not load latest AI report.')
+      throw new Error("Could not load latest AI report.");
     }
 
-    report.value = await response.json()
+    report.value = await response.json();
   } catch (fetchError) {
-    error.value = fetchError.message || 'Could not load latest AI report.'
-    report.value = null
+    error.value = fetchError.message || "Could not load latest AI report.";
+    report.value = null;
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
 }
 
-onMounted(fetchLatestReport)
-watch(() => [props.authToken, props.refreshKey], fetchLatestReport)
+onMounted(fetchLatestReport);
+watch(() => [props.authToken, props.refreshKey], fetchLatestReport);
 </script>
 
 <template>
-  <section class="rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+  <section
+    class="rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+  >
     <div class="border-b border-slate-200 px-4 py-3 dark:border-slate-700">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 class="text-sm font-semibold text-slate-950 dark:text-white">AI Insights</h2>
-          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">AI-generated estimate based on your store data</p>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            AI-generated estimate based on your store data
+          </p>
         </div>
-        <p v-if="generatedAt" class="text-xs font-medium text-slate-500 dark:text-slate-400">{{ generatedAt }}</p>
+        <p v-if="generatedAt" class="text-xs font-medium text-slate-500 dark:text-slate-400">
+          {{ generatedAt }}
+        </p>
       </div>
     </div>
 
@@ -92,7 +98,9 @@ watch(() => [props.authToken, props.refreshKey], fetchLatestReport)
       </p>
 
       <div v-else-if="report" class="space-y-3">
-        <p class="whitespace-pre-line text-sm leading-6 text-slate-700 dark:text-slate-200">{{ report.content }}</p>
+        <p class="whitespace-pre-line text-sm leading-6 text-slate-700 dark:text-slate-200">
+          {{ report.content }}
+        </p>
         <p class="text-xs text-slate-500 dark:text-slate-400">
           AI-generated estimate based on your store data
         </p>
@@ -100,7 +108,9 @@ watch(() => [props.authToken, props.refreshKey], fetchLatestReport)
 
       <div v-else class="py-6 text-center">
         <p class="text-sm font-semibold text-slate-700 dark:text-slate-100">No AI report yet.</p>
-        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">The latest nightly report will appear here after generation.</p>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          The latest nightly report will appear here after generation.
+        </p>
       </div>
     </div>
   </section>

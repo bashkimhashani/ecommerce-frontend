@@ -1,118 +1,118 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '../stores/authStore'
+import { createRouter, createWebHistory } from "vue-router";
+import { useAuthStore } from "../stores/authStore";
 
-const RouteShell = { template: '<span />' }
+const RouteShell = { template: "<span />" };
 
 const routes = [
   {
-    path: '/',
-    name: 'catalog',
+    path: "/",
+    name: "catalog",
     component: RouteShell,
-    meta: { activeView: 'catalog' },
+    meta: { activeView: "catalog" },
   },
   {
-    path: '/products/:productSlug',
-    name: 'product-detail',
+    path: "/products/:productSlug",
+    name: "product-detail",
     component: RouteShell,
-    meta: { activeView: 'product-detail' },
+    meta: { activeView: "product-detail" },
   },
   {
-    path: '/vendor',
-    name: 'vendor',
+    path: "/vendor",
+    name: "vendor",
     component: RouteShell,
     meta: {
-      activeView: 'vendor',
+      activeView: "vendor",
       requiresAuth: true,
-      roles: ['vendor_admin', 'store_staff', 'superadmin'],
+      roles: ["vendor_admin", "store_staff", "superadmin"],
     },
   },
   {
-    path: '/orders',
-    name: 'orders',
+    path: "/orders",
+    name: "orders",
     component: RouteShell,
     meta: {
-      activeView: 'orders',
+      activeView: "orders",
       requiresAuth: true,
-      roles: ['customer'],
+      roles: ["customer"],
     },
   },
   {
-    path: '/orders/:orderNumber',
-    name: 'order-detail',
+    path: "/orders/:orderNumber",
+    name: "order-detail",
     component: RouteShell,
     meta: {
-      activeView: 'order-detail',
+      activeView: "order-detail",
       requiresAuth: true,
-      roles: ['customer'],
+      roles: ["customer"],
     },
   },
   {
-    path: '/profile',
-    name: 'profile',
+    path: "/profile",
+    name: "profile",
     component: RouteShell,
     meta: {
-      activeView: 'profile',
+      activeView: "profile",
       requiresAuth: true,
     },
   },
   {
-    path: '/login',
-    name: 'login',
+    path: "/login",
+    name: "login",
     component: RouteShell,
-    meta: { activeView: 'login' },
+    meta: { activeView: "login" },
   },
   {
-    path: '/register',
-    name: 'register',
+    path: "/register",
+    name: "register",
     component: RouteShell,
-    meta: { activeView: 'register' },
+    meta: { activeView: "register" },
   },
   {
-    path: '/tenant/register',
-    name: 'tenant-register',
+    path: "/tenant/register",
+    name: "tenant-register",
     component: RouteShell,
-    meta: { activeView: 'tenant-register' },
+    meta: { activeView: "tenant-register" },
   },
   {
-    path: '/forgot-password',
-    name: 'forgot-password',
+    path: "/forgot-password",
+    name: "forgot-password",
     component: RouteShell,
-    meta: { activeView: 'forgot-password' },
+    meta: { activeView: "forgot-password" },
   },
   {
-    path: '/reset-password',
-    name: 'reset-password',
+    path: "/reset-password",
+    name: "reset-password",
     component: RouteShell,
-    meta: { activeView: 'reset-password' },
+    meta: { activeView: "reset-password" },
   },
   {
-    path: '/:pathMatch(.*)*',
-    redirect: { name: 'catalog' },
+    path: "/:pathMatch(.*)*",
+    redirect: { name: "catalog" },
   },
-]
+];
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
-})
+});
 
 router.beforeEach((to) => {
-  const authStore = useAuthStore()
-  const allowedRoles = to.meta.roles || []
-  const requiresAuth = to.meta.requiresAuth || allowedRoles.length > 0
+  const authStore = useAuthStore();
+  const allowedRoles = to.meta.roles || [];
+  const requiresAuth = to.meta.requiresAuth || allowedRoles.length > 0;
 
   if (requiresAuth && !authStore.isAuthenticated) {
     return {
-      name: 'login',
+      name: "login",
       query: { redirect: to.fullPath },
-    }
+    };
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(authStore.role)) {
-    return { name: 'catalog' }
+    return { name: "catalog" };
   }
 
-  return true
-})
+  return true;
+});
 
-export default router
+export default router;

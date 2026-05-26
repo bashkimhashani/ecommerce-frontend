@@ -1,56 +1,59 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch } from "vue";
 
 const props = defineProps({
   product: {
     type: Object,
     required: true,
   },
-})
+});
 
-const emit = defineEmits(['view', 'toggle-wishlist'])
-const isWishlisted = ref(Boolean(props.product.is_wishlisted))
+const emit = defineEmits(["view", "toggle-wishlist"]);
+const isWishlisted = ref(Boolean(props.product.is_wishlisted));
 
 const formattedPrice = computed(() => {
-  const numericPrice = Number(props.product.price)
+  const numericPrice = Number(props.product.price);
 
   if (Number.isNaN(numericPrice)) {
-    return props.product.price
+    return props.product.price;
   }
 
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(numericPrice)
-})
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(numericPrice);
+});
 
 const ratingLabel = computed(() => {
   if (props.product.avg_rating === null || props.product.avg_rating === undefined) {
-    return 'New'
+    return "New";
   }
 
-  return Number(props.product.avg_rating).toFixed(1)
-})
+  return Number(props.product.avg_rating).toFixed(1);
+});
 
 const vendorName = computed(() => {
-  return props.product.vendor?.store_name || props.product.vendor_name || ''
-})
+  return props.product.vendor?.store_name || props.product.vendor_name || "";
+});
 
 function toggleWishlist() {
-  isWishlisted.value = !isWishlisted.value
-  emit('toggle-wishlist', {
+  isWishlisted.value = !isWishlisted.value;
+  emit("toggle-wishlist", {
     product: props.product,
     isWishlisted: isWishlisted.value,
-  })
+  });
 }
 
 function viewProduct() {
-  emit('view', props.product.slug)
+  emit("view", props.product.slug);
 }
 
-watch(() => props.product.is_wishlisted, (nextValue) => {
-  isWishlisted.value = Boolean(nextValue)
-})
+watch(
+  () => props.product.is_wishlisted,
+  (nextValue) => {
+    isWishlisted.value = Boolean(nextValue);
+  }
+);
 </script>
 
 <template>
@@ -63,8 +66,12 @@ watch(() => props.product.is_wishlisted, (nextValue) => {
     @keydown.enter.prevent="viewProduct"
     @keydown.space.prevent="viewProduct"
   >
-    <div class="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-cyan-50 via-slate-100 to-emerald-50 dark:from-slate-800 dark:via-slate-900 dark:to-cyan-950">
-      <div class="absolute left-3 top-3 z-10 rounded-full bg-slate-950/85 px-2.5 py-1 text-xs font-bold text-cyan-100 backdrop-blur dark:bg-cyan-300 dark:text-slate-950">
+    <div
+      class="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-cyan-50 via-slate-100 to-emerald-50 dark:from-slate-800 dark:via-slate-900 dark:to-cyan-950"
+    >
+      <div
+        class="absolute left-3 top-3 z-10 rounded-full bg-slate-950/85 px-2.5 py-1 text-xs font-bold text-cyan-100 backdrop-blur dark:bg-cyan-300 dark:text-slate-950"
+      >
         Tech pick
       </div>
       <img
@@ -73,8 +80,11 @@ watch(() => props.product.is_wishlisted, (nextValue) => {
         :alt="product.name"
         class="h-full w-full object-cover transition duration-300 group-hover:scale-105"
         loading="lazy"
+      />
+      <div
+        v-else
+        class="flex h-full items-center justify-center bg-gradient-to-br from-cyan-100 via-white to-emerald-100 px-4 text-center dark:from-slate-800 dark:via-slate-900 dark:to-cyan-950"
       >
-      <div v-else class="flex h-full items-center justify-center bg-gradient-to-br from-cyan-100 via-white to-emerald-100 px-4 text-center dark:from-slate-800 dark:via-slate-900 dark:to-cyan-950">
         <span class="text-sm font-medium text-slate-500 dark:text-slate-300">
           {{ product.name }}
         </span>
@@ -111,8 +121,10 @@ watch(() => props.product.is_wishlisted, (nextValue) => {
         <h2 class="min-w-0 text-sm font-black leading-5 text-slate-950 dark:text-slate-50">
           {{ product.name }}
         </h2>
-        <span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-700 dark:bg-amber-400/15 dark:text-amber-200">
-          {{ ratingLabel === 'New' ? ratingLabel : `${ratingLabel} rating` }}
+        <span
+          class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-700 dark:bg-amber-400/15 dark:text-amber-200"
+        >
+          {{ ratingLabel === "New" ? ratingLabel : `${ratingLabel} rating` }}
         </span>
       </div>
 

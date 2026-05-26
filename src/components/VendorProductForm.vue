@@ -1,80 +1,92 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch } from "vue";
 
-import VendorProductImageGallery from './VendorProductImageGallery.vue'
+import VendorProductImageGallery from "./VendorProductImageGallery.vue";
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-const mode = ref('create')
-const authToken = ref('')
-const targetSlug = ref('macbook-air-13-m3')
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const mode = ref("create");
+const authToken = ref("");
+const targetSlug = ref("macbook-air-13-m3");
 const product = ref({
-  name: 'MacBook Air 13 M3',
-  slug: 'macbook-air-13-m3',
-  sku: 'MBA13-M3-256',
+  name: "MacBook Air 13 M3",
+  slug: "macbook-air-13-m3",
+  sku: "MBA13-M3-256",
   brand: 1,
   category: 1,
-  status: 'draft',
-  base_price: '1099.00',
-})
-const specsJson = ref(JSON.stringify({
-  cpu: 'Apple M3',
-  ram: '16GB',
-  storage: '512GB SSD',
-  display: '13.6 inch Liquid Retina',
-}, null, 2))
+  status: "draft",
+  base_price: "1099.00",
+});
+const specsJson = ref(
+  JSON.stringify(
+    {
+      cpu: "Apple M3",
+      ram: "16GB",
+      storage: "512GB SSD",
+      display: "13.6 inch Liquid Retina",
+    },
+    null,
+    2
+  )
+);
 const images = ref([
   {
     id: 1,
-    image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80',
-    thumbnail: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=300&q=80',
-    alt_text: 'MacBook laptop open on desk',
+    image:
+      "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80",
+    thumbnail:
+      "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=300&q=80",
+    alt_text: "MacBook laptop open on desk",
     sort_order: 0,
     is_primary: true,
   },
   {
     id: 2,
-    image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=800&q=80',
-    thumbnail: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=300&q=80',
-    alt_text: 'Laptop keyboard and screen',
+    image:
+      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=800&q=80",
+    thumbnail:
+      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=300&q=80",
+    alt_text: "Laptop keyboard and screen",
     sort_order: 1,
     is_primary: false,
   },
   {
     id: 3,
-    image: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=800&q=80',
-    thumbnail: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=300&q=80',
-    alt_text: 'Laptop with accessories',
+    image:
+      "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=800&q=80",
+    thumbnail:
+      "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=300&q=80",
+    alt_text: "Laptop with accessories",
     sort_order: 2,
     is_primary: false,
   },
-])
-const saveState = ref('idle')
-const responseMessage = ref('')
-const shouldShowPayload = ref(false)
+]);
+const saveState = ref("idle");
+const responseMessage = ref("");
+const shouldShowPayload = ref(false);
 
 const endpointUrl = computed(() => {
-  if (mode.value === 'update') {
-    return `${apiBaseUrl}/api/v1/catalog/products/${targetSlug.value}/`
+  if (mode.value === "update") {
+    return `${apiBaseUrl}/api/v1/catalog/products/${targetSlug.value}/`;
   }
 
-  return `${apiBaseUrl}/api/v1/catalog/products/`
-})
+  return `${apiBaseUrl}/api/v1/catalog/products/`;
+});
 
-const requestMethod = computed(() => (mode.value === 'update' ? 'PUT' : 'POST'))
+const requestMethod = computed(() => (mode.value === "update" ? "PUT" : "POST"));
 
 const parsedSpecs = computed(() => {
   try {
     return {
-      value: JSON.parse(specsJson.value || '{}'),
-      error: '',
-    }
+      value: JSON.parse(specsJson.value || "{}"),
+      error: "",
+    };
   } catch (error) {
     return {
       value: null,
       error: error.message,
-    }
+    };
   }
-})
+});
 
 const productPayload = computed(() => ({
   name: product.value.name.trim(),
@@ -85,7 +97,7 @@ const productPayload = computed(() => ({
   status: product.value.status,
   base_price: product.value.base_price,
   tech_specs: parsedSpecs.value.value,
-}))
+}));
 
 const reorderPayload = computed(() => ({
   images: images.value.map((image) => ({
@@ -94,7 +106,7 @@ const reorderPayload = computed(() => ({
     alt_text: image.alt_text,
     is_primary: image.is_primary,
   })),
-}))
+}));
 
 const hasValidProductPayload = computed(() => {
   return Boolean(
@@ -104,70 +116,68 @@ const hasValidProductPayload = computed(() => {
     productPayload.value.brand &&
     productPayload.value.category &&
     productPayload.value.base_price &&
-    parsedSpecs.value.value,
-  )
-})
+    parsedSpecs.value.value
+  );
+});
 
 function formatSpecs() {
   if (!parsedSpecs.value.value) {
-    return
+    return;
   }
 
-  specsJson.value = JSON.stringify(parsedSpecs.value.value, null, 2)
+  specsJson.value = JSON.stringify(parsedSpecs.value.value, null, 2);
 }
 
 async function saveProduct() {
-  shouldShowPayload.value = true
+  shouldShowPayload.value = true;
 
   if (!hasValidProductPayload.value) {
-    responseMessage.value = 'Fix the product fields before saving.'
-    return
+    responseMessage.value = "Fix the product fields before saving.";
+    return;
   }
 
-  saveState.value = 'saving'
-  responseMessage.value = ''
+  saveState.value = "saving";
+  responseMessage.value = "";
 
   try {
     const response = await fetch(endpointUrl.value, {
       method: requestMethod.value,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...(authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}),
       },
       body: JSON.stringify(productPayload.value),
-    })
+    });
 
     if (!response.ok) {
-      const errorPayload = await response.json().catch(() => ({}))
-      throw new Error(JSON.stringify(errorPayload, null, 2) || 'Could not save product.')
+      const errorPayload = await response.json().catch(() => ({}));
+      throw new Error(JSON.stringify(errorPayload, null, 2) || "Could not save product.");
     }
 
-    const savedProduct = await response.json()
-    product.value.slug = savedProduct.slug
-    targetSlug.value = savedProduct.slug
-    product.value.status = savedProduct.status
-    responseMessage.value = 'Product saved.'
-    saveState.value = 'saved'
+    const savedProduct = await response.json();
+    product.value.slug = savedProduct.slug;
+    targetSlug.value = savedProduct.slug;
+    product.value.status = savedProduct.status;
+    responseMessage.value = "Product saved.";
+    saveState.value = "saved";
   } catch (error) {
-    responseMessage.value = error.message || 'Could not save product.'
-    saveState.value = 'error'
+    responseMessage.value = error.message || "Could not save product.";
+    saveState.value = "error";
   }
 }
 
 watch(mode, () => {
-  targetSlug.value = product.value.slug
-  responseMessage.value = ''
-  saveState.value = 'idle'
-})
+  targetSlug.value = product.value.slug;
+  responseMessage.value = "";
+  saveState.value = "idle";
+});
 </script>
 
 <template>
   <section class="min-w-0 flex-1 px-6 py-5">
     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
       <div>
-        <h1 class="text-xl font-semibold text-slate-950">
-          Product Management
-        </h1>
+        <h1 class="text-xl font-semibold text-slate-950">Product Management</h1>
         <p class="mt-1 text-sm text-slate-500">
           Create and update catalog products for the current tenant.
         </p>
@@ -177,7 +187,11 @@ watch(mode, () => {
         <button
           type="button"
           class="rounded px-3 py-1.5 text-sm font-semibold"
-          :class="mode === 'create' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+          :class="
+            mode === 'create'
+              ? 'bg-white text-slate-950 shadow-sm'
+              : 'text-slate-500 hover:text-slate-800'
+          "
           @click="mode = 'create'"
         >
           Create
@@ -185,7 +199,11 @@ watch(mode, () => {
         <button
           type="button"
           class="rounded px-3 py-1.5 text-sm font-semibold"
-          :class="mode === 'update' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+          :class="
+            mode === 'update'
+              ? 'bg-white text-slate-950 shadow-sm'
+              : 'text-slate-500 hover:text-slate-800'
+          "
           @click="mode = 'update'"
         >
           Update
@@ -207,7 +225,7 @@ watch(mode, () => {
                 v-model="product.name"
                 type="text"
                 class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500"
-              >
+              />
             </label>
 
             <label class="block">
@@ -216,7 +234,7 @@ watch(mode, () => {
                 v-model="product.slug"
                 type="text"
                 class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500"
-              >
+              />
             </label>
 
             <label class="block">
@@ -225,7 +243,7 @@ watch(mode, () => {
                 v-model="product.sku"
                 type="text"
                 class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500"
-              >
+              />
             </label>
 
             <label class="block">
@@ -236,7 +254,7 @@ watch(mode, () => {
                 min="0"
                 step="0.01"
                 class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500"
-              >
+              />
             </label>
 
             <label class="block">
@@ -246,7 +264,7 @@ watch(mode, () => {
                 type="number"
                 min="1"
                 class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500"
-              >
+              />
             </label>
 
             <label class="block">
@@ -256,7 +274,7 @@ watch(mode, () => {
                 type="number"
                 min="1"
                 class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500"
-              >
+              />
             </label>
 
             <label class="block md:col-span-2">
@@ -274,7 +292,9 @@ watch(mode, () => {
         </section>
 
         <section class="rounded-md border border-slate-200 bg-white">
-          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+          <div
+            class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3"
+          >
             <h2 class="text-sm font-semibold text-slate-950">Tech specs JSON</h2>
             <button
               type="button"
@@ -316,7 +336,7 @@ watch(mode, () => {
                   v-model="targetSlug"
                   type="text"
                   class="w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500"
-                >
+                />
               </dd>
             </div>
             <div class="flex justify-between gap-3">
@@ -334,7 +354,7 @@ watch(mode, () => {
                   v-model="authToken"
                   type="password"
                   class="w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500"
-                >
+                />
               </dd>
             </div>
           </dl>
@@ -344,13 +364,15 @@ watch(mode, () => {
             class="mt-4 w-full rounded-md bg-slate-950 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
             :disabled="saveState === 'saving' || !hasValidProductPayload"
           >
-            {{ saveState === 'saving' ? 'Saving...' : 'Save product' }}
+            {{ saveState === "saving" ? "Saving..." : "Save product" }}
           </button>
 
           <p
             v-if="responseMessage"
             class="mt-3 rounded-md px-3 py-2 text-sm"
-            :class="saveState === 'error' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'"
+            :class="
+              saveState === 'error' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
+            "
           >
             {{ responseMessage }}
           </p>
@@ -364,15 +386,21 @@ watch(mode, () => {
               class="rounded-md border border-white/20 px-2 py-1 text-xs font-semibold text-slate-200 hover:bg-white/10"
               @click="shouldShowPayload = !shouldShowPayload"
             >
-              {{ shouldShowPayload ? 'Hide' : 'Show' }}
+              {{ shouldShowPayload ? "Hide" : "Show" }}
             </button>
           </div>
-          <pre v-if="shouldShowPayload" class="mt-3 max-h-80 overflow-auto rounded-md bg-black/30 p-3 text-xs leading-5">{{ JSON.stringify(productPayload, null, 2) }}</pre>
+          <pre
+            v-if="shouldShowPayload"
+            class="mt-3 max-h-80 overflow-auto rounded-md bg-black/30 p-3 text-xs leading-5"
+            >{{ JSON.stringify(productPayload, null, 2) }}</pre
+          >
         </section>
 
         <section class="rounded-md border border-slate-200 bg-slate-950 p-4 text-slate-100">
           <h2 class="text-sm font-semibold">Image reorder payload</h2>
-          <pre class="mt-3 max-h-64 overflow-auto rounded-md bg-black/30 p-3 text-xs leading-5">{{ JSON.stringify(reorderPayload, null, 2) }}</pre>
+          <pre class="mt-3 max-h-64 overflow-auto rounded-md bg-black/30 p-3 text-xs leading-5">{{
+            JSON.stringify(reorderPayload, null, 2)
+          }}</pre>
         </section>
       </aside>
     </form>

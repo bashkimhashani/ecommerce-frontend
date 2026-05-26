@@ -1,42 +1,42 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from "vue";
 
 const props = defineProps({
   orderNumber: {
     type: String,
     required: true,
   },
-})
+});
 
-const emit = defineEmits(['back'])
+const emit = defineEmits(["back"]);
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 const lifecycleSteps = [
-  { id: 'pending', label: 'Pending' },
-  { id: 'confirmed', label: 'Confirmed' },
-  { id: 'processing', label: 'Processing' },
-  { id: 'shipped', label: 'Shipped' },
-  { id: 'delivered', label: 'Delivered' },
-]
+  { id: "pending", label: "Pending" },
+  { id: "confirmed", label: "Confirmed" },
+  { id: "processing", label: "Processing" },
+  { id: "shipped", label: "Shipped" },
+  { id: "delivered", label: "Delivered" },
+];
 
-const order = ref(null)
-const isLoading = ref(false)
-const errorMessage = ref('')
+const order = ref(null);
+const isLoading = ref(false);
+const errorMessage = ref("");
 
 const timelineSteps = computed(() => {
-  if (order.value?.status === 'cancelled') {
+  if (order.value?.status === "cancelled") {
     return [
-      { id: 'pending', label: 'Pending' },
-      { id: 'cancelled', label: 'Cancelled' },
-    ]
+      { id: "pending", label: "Pending" },
+      { id: "cancelled", label: "Cancelled" },
+    ];
   }
 
-  return lifecycleSteps
-})
+  return lifecycleSteps;
+});
 
 const eventLog = computed(() => {
-  const apiEvents = Array.isArray(order.value?.events) ? order.value.events : []
+  const apiEvents = Array.isArray(order.value?.events) ? order.value.events : [];
   if (apiEvents.length) {
     return apiEvents.map((event) => ({
       id: event.id || `${event.transition}-${event.created_at}`,
@@ -47,168 +47,166 @@ const eventLog = computed(() => {
         ? `${statusLabel(event.from_status)} to ${statusLabel(event.to_status)}`
         : statusLabel(event.to_status),
       created_at: event.created_at,
-    }))
+    }));
   }
 
   if (!order.value) {
-    return []
+    return [];
   }
 
   const fallbackEvents = [
     {
-      id: 'created',
-      title: 'Order placed',
-      description: `Initial status: ${statusLabel('pending')}`,
+      id: "created",
+      title: "Order placed",
+      description: `Initial status: ${statusLabel("pending")}`,
       created_at: order.value.created_at,
     },
-  ]
+  ];
 
-  if (order.value.status && order.value.status !== 'pending') {
+  if (order.value.status && order.value.status !== "pending") {
     fallbackEvents.push({
-      id: 'current-status',
+      id: "current-status",
       title: `Status is ${statusLabel(order.value.status)}`,
-      description: 'Latest status from the order record',
+      description: "Latest status from the order record",
       created_at: order.value.updated_at || order.value.created_at,
-    })
+    });
   }
 
-  return fallbackEvents
-})
+  return fallbackEvents;
+});
 
 function authHeaders() {
-  const token = localStorage.getItem('accessToken') || localStorage.getItem('access')
-  return token ? { Authorization: `Bearer ${token}` } : {}
+  const token = localStorage.getItem("accessToken") || localStorage.getItem("access");
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 async function loadOrder() {
   if (!props.orderNumber) {
-    return
+    return;
   }
 
-  isLoading.value = true
-  errorMessage.value = ''
+  isLoading.value = true;
+  errorMessage.value = "";
 
   try {
     const response = await fetch(`${API_BASE_URL}/api/v1/orders/${props.orderNumber}/`, {
-      credentials: 'include',
+      credentials: "include",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...authHeaders(),
       },
-    })
-    const data = await response.json().catch(() => ({}))
+    });
+    const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(data.detail || 'Order could not be loaded.')
+      throw new Error(data.detail || "Order could not be loaded.");
     }
 
-    order.value = data
+    order.value = data;
   } catch (error) {
-    order.value = null
-    errorMessage.value = error.message
+    order.value = null;
+    errorMessage.value = error.message;
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
 }
 
 function timelineState(stepId) {
   if (!order.value?.status) {
-    return 'upcoming'
+    return "upcoming";
   }
 
-  if (order.value.status === 'cancelled') {
-    return stepId === 'cancelled' ? 'current-cancelled' : 'complete'
+  if (order.value.status === "cancelled") {
+    return stepId === "cancelled" ? "current-cancelled" : "complete";
   }
 
-  const currentIndex = lifecycleSteps.findIndex((step) => step.id === order.value.status)
-  const stepIndex = lifecycleSteps.findIndex((step) => step.id === stepId)
+  const currentIndex = lifecycleSteps.findIndex((step) => step.id === order.value.status);
+  const stepIndex = lifecycleSteps.findIndex((step) => step.id === stepId);
 
   if (stepIndex < currentIndex) {
-    return 'complete'
+    return "complete";
   }
 
   if (stepIndex === currentIndex) {
-    return 'current'
+    return "current";
   }
 
-  return 'upcoming'
+  return "upcoming";
 }
 
 function markerClasses(state) {
   const classes = {
-    complete: 'border-emerald-600 bg-emerald-600 text-white',
-    current: 'border-neutral-950 bg-neutral-950 text-white',
-    'current-cancelled': 'border-red-600 bg-red-600 text-white',
-    upcoming: 'border-neutral-300 bg-white text-neutral-400',
-  }
+    complete: "border-emerald-600 bg-emerald-600 text-white",
+    current: "border-neutral-950 bg-neutral-950 text-white",
+    "current-cancelled": "border-red-600 bg-red-600 text-white",
+    upcoming: "border-neutral-300 bg-white text-neutral-400",
+  };
 
-  return classes[state]
+  return classes[state];
 }
 
 function labelClasses(state) {
   const classes = {
-    complete: 'text-emerald-800',
-    current: 'text-neutral-950',
-    'current-cancelled': 'text-red-700',
-    upcoming: 'text-neutral-500',
-  }
+    complete: "text-emerald-800",
+    current: "text-neutral-950",
+    "current-cancelled": "text-red-700",
+    upcoming: "text-neutral-500",
+  };
 
-  return classes[state]
+  return classes[state];
 }
 
 function statusLabel(status) {
   const labels = {
-    pending: 'Pending',
-    confirmed: 'Confirmed',
-    processing: 'Processing',
-    shipped: 'Shipped',
-    delivered: 'Delivered',
-    cancelled: 'Cancelled',
-  }
+    pending: "Pending",
+    confirmed: "Confirmed",
+    processing: "Processing",
+    shipped: "Shipped",
+    delivered: "Delivered",
+    cancelled: "Cancelled",
+  };
 
-  return labels[status] || status || 'Unknown'
+  return labels[status] || status || "Unknown";
 }
 
 function statusBadgeClasses(status) {
   const classes = {
-    pending: 'border-amber-200 bg-amber-50 text-amber-800',
-    confirmed: 'border-sky-200 bg-sky-50 text-sky-800',
-    processing: 'border-indigo-200 bg-indigo-50 text-indigo-800',
-    shipped: 'border-cyan-200 bg-cyan-50 text-cyan-800',
-    delivered: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-    cancelled: 'border-red-200 bg-red-50 text-red-700',
-  }
+    pending: "border-amber-200 bg-amber-50 text-amber-800",
+    confirmed: "border-sky-200 bg-sky-50 text-sky-800",
+    processing: "border-indigo-200 bg-indigo-50 text-indigo-800",
+    shipped: "border-cyan-200 bg-cyan-50 text-cyan-800",
+    delivered: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    cancelled: "border-red-200 bg-red-50 text-red-700",
+  };
 
-  return classes[status] || 'border-neutral-200 bg-neutral-100 text-neutral-700'
+  return classes[status] || "border-neutral-200 bg-neutral-100 text-neutral-700";
 }
 
 function formatTransition(value) {
-  return value
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+  return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function formatDateTime(value) {
   if (!value) {
-    return 'Date pending'
+    return "Date pending";
   }
 
-  return new Intl.DateTimeFormat('en', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
 }
 
 function formatMoney(value) {
-  return `$${Number(value || 0).toFixed(2)}`
+  return `$${Number(value || 0).toFixed(2)}`;
 }
 
 function addressLine(address) {
-  if (!address || typeof address !== 'object') {
-    return 'Address pending'
+  if (!address || typeof address !== "object") {
+    return "Address pending";
   }
 
   return [
@@ -218,16 +216,20 @@ function addressLine(address) {
     address.state,
     address.postal_code,
     address.country,
-  ].filter(Boolean).join(', ')
+  ]
+    .filter(Boolean)
+    .join(", ");
 }
 
-watch(() => props.orderNumber, loadOrder)
-onMounted(loadOrder)
+watch(() => props.orderNumber, loadOrder);
+onMounted(loadOrder);
 </script>
 
 <template>
   <section class="mx-auto max-w-6xl px-5 py-8" aria-labelledby="order-detail-title">
-    <div class="mb-6 flex flex-col gap-4 border-b border-neutral-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
+    <div
+      class="mb-6 flex flex-col gap-4 border-b border-neutral-200 pb-5 sm:flex-row sm:items-end sm:justify-between"
+    >
       <div>
         <button
           class="mb-3 text-sm font-semibold text-neutral-600 transition hover:text-neutral-950"
@@ -252,7 +254,10 @@ onMounted(loadOrder)
       </button>
     </div>
 
-    <div v-if="errorMessage" class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+    <div
+      v-if="errorMessage"
+      class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+    >
       {{ errorMessage }}
     </div>
 
@@ -263,7 +268,10 @@ onMounted(loadOrder)
 
     <div v-else-if="order" class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
       <div class="space-y-6">
-        <section class="rounded-md border border-neutral-200 bg-white p-5 shadow-sm" aria-labelledby="timeline-title">
+        <section
+          class="rounded-md border border-neutral-200 bg-white p-5 shadow-sm"
+          aria-labelledby="timeline-title"
+        >
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 id="timeline-title" class="text-lg font-semibold text-neutral-950">
               Status timeline
@@ -293,17 +301,21 @@ onMounted(loadOrder)
               >
                 {{ index + 1 }}
               </div>
-              <p class="mt-1 text-sm font-semibold sm:mt-3" :class="labelClasses(timelineState(step.id))">
+              <p
+                class="mt-1 text-sm font-semibold sm:mt-3"
+                :class="labelClasses(timelineState(step.id))"
+              >
                 {{ step.label }}
               </p>
             </li>
           </ol>
         </section>
 
-        <section class="rounded-md border border-neutral-200 bg-white p-5 shadow-sm" aria-labelledby="event-log-title">
-          <h2 id="event-log-title" class="text-lg font-semibold text-neutral-950">
-            Event log
-          </h2>
+        <section
+          class="rounded-md border border-neutral-200 bg-white p-5 shadow-sm"
+          aria-labelledby="event-log-title"
+        >
+          <h2 id="event-log-title" class="text-lg font-semibold text-neutral-950">Event log</h2>
 
           <ol class="mt-5 space-y-4">
             <li
@@ -325,7 +337,10 @@ onMounted(loadOrder)
         </section>
       </div>
 
-      <aside class="self-start rounded-md border border-neutral-200 bg-white p-5 shadow-sm" aria-label="Order summary">
+      <aside
+        class="self-start rounded-md border border-neutral-200 bg-white p-5 shadow-sm"
+        aria-label="Order summary"
+      >
         <h2 class="text-lg font-semibold text-neutral-950">Summary</h2>
 
         <dl class="mt-5 space-y-4 text-sm">

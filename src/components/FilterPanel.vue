@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from "vue";
 
 const props = defineProps({
   modelValue: {
@@ -13,24 +13,25 @@ const props = defineProps({
       price_ranges: [],
     }),
   },
-})
+});
 
-const emit = defineEmits(['update:modelValue', 'clear'])
+const emit = defineEmits(["update:modelValue", "clear"]);
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-const categories = ref([])
-const isLoadingCategories = ref(false)
-const categoryError = ref('')
-const minPrice = ref(Number(props.modelValue.minPrice || 0))
-const maxPrice = ref(Number(props.modelValue.maxPrice || 3000))
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const categories = ref([]);
+const isLoadingCategories = ref(false);
+const categoryError = ref("");
+const minPrice = ref(Number(props.modelValue.minPrice || 0));
+const maxPrice = ref(Number(props.modelValue.maxPrice || 3000));
 
-const flattenedCategories = computed(() => flattenCategories(categories.value))
-const hasActiveFilters = computed(() => (
-  Boolean(props.modelValue.brand)
-  || Boolean(props.modelValue.category)
-  || Number(props.modelValue.minPrice || 0) > 0
-  || Number(props.modelValue.maxPrice || 3000) < 3000
-))
+const flattenedCategories = computed(() => flattenCategories(categories.value));
+const hasActiveFilters = computed(
+  () =>
+    Boolean(props.modelValue.brand) ||
+    Boolean(props.modelValue.category) ||
+    Number(props.modelValue.minPrice || 0) > 0 ||
+    Number(props.modelValue.maxPrice || 3000) < 3000
+);
 
 function flattenCategories(items, depth = 0, output = []) {
   items.forEach((category) => {
@@ -39,73 +40,75 @@ function flattenCategories(items, depth = 0, output = []) {
       name: category.name,
       slug: category.slug,
       depth,
-    })
-    flattenCategories(category.children || [], depth + 1, output)
-  })
-  return output
+    });
+    flattenCategories(category.children || [], depth + 1, output);
+  });
+  return output;
 }
 
 function updateFilter(key, value) {
-  emit('update:modelValue', {
+  emit("update:modelValue", {
     ...props.modelValue,
     [key]: value,
-  })
+  });
 }
 
 function updatePriceRange() {
-  const nextMinPrice = Math.min(Number(minPrice.value), Number(maxPrice.value))
-  const nextMaxPrice = Math.max(Number(minPrice.value), Number(maxPrice.value))
-  minPrice.value = nextMinPrice
-  maxPrice.value = nextMaxPrice
-  emit('update:modelValue', {
+  const nextMinPrice = Math.min(Number(minPrice.value), Number(maxPrice.value));
+  const nextMaxPrice = Math.max(Number(minPrice.value), Number(maxPrice.value));
+  minPrice.value = nextMinPrice;
+  maxPrice.value = nextMaxPrice;
+  emit("update:modelValue", {
     ...props.modelValue,
     minPrice: nextMinPrice,
     maxPrice: nextMaxPrice,
-  })
+  });
 }
 
 function toggleBrand(slug) {
-  updateFilter('brand', props.modelValue.brand === slug ? '' : slug)
+  updateFilter("brand", props.modelValue.brand === slug ? "" : slug);
 }
 
 function clearFilters() {
-  minPrice.value = 0
-  maxPrice.value = 3000
-  emit('clear')
+  minPrice.value = 0;
+  maxPrice.value = 3000;
+  emit("clear");
 }
 
 async function loadCategories() {
-  isLoadingCategories.value = true
-  categoryError.value = ''
+  isLoadingCategories.value = true;
+  categoryError.value = "";
 
   try {
-    const response = await fetch(`${apiBaseUrl}/api/v1/catalog/categories/tree/`)
+    const response = await fetch(`${apiBaseUrl}/api/v1/catalog/categories/tree/`);
 
     if (!response.ok) {
-      throw new Error('Could not load categories.')
+      throw new Error("Could not load categories.");
     }
 
-    categories.value = await response.json()
+    categories.value = await response.json();
   } catch (error) {
-    categoryError.value = error.message || 'Could not load categories.'
+    categoryError.value = error.message || "Could not load categories.";
   } finally {
-    isLoadingCategories.value = false
+    isLoadingCategories.value = false;
   }
 }
 
 watch(
   () => [props.modelValue.minPrice, props.modelValue.maxPrice],
   ([nextMinPrice, nextMaxPrice]) => {
-    minPrice.value = Number(nextMinPrice || 0)
-    maxPrice.value = Number(nextMaxPrice || 3000)
-  },
-)
+    minPrice.value = Number(nextMinPrice || 0);
+    maxPrice.value = Number(nextMaxPrice || 3000);
+  }
+);
 
-onMounted(loadCategories)
+onMounted(loadCategories);
 </script>
 
 <template>
-  <aside class="w-full shrink-0 border-b border-cyan-100 bg-slate-50/90 dark:border-cyan-400/10 dark:bg-slate-950/90 lg:w-72 lg:border-b-0 lg:border-r">
+  <aside
+    class="w-full shrink-0 border-b border-cyan-100 bg-slate-50/90 dark:border-cyan-400/10 dark:bg-slate-950/90 lg:w-72 lg:border-b-0 lg:border-r"
+  >
     <div class="space-y-5 p-4">
       <div class="flex items-center justify-between gap-3">
         <h2 class="text-sm font-black uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-300">
@@ -121,11 +124,11 @@ onMounted(loadCategories)
         </button>
       </div>
 
-      <section class="space-y-3 rounded-2xl border border-white bg-white p-4 shadow-sm shadow-cyan-950/5 dark:border-cyan-400/10 dark:bg-slate-900">
+      <section
+        class="space-y-3 rounded-2xl border border-white bg-white p-4 shadow-sm shadow-cyan-950/5 dark:border-cyan-400/10 dark:bg-slate-900"
+      >
         <div class="flex items-center justify-between">
-          <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100">
-            Price
-          </h3>
+          <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100">Price</h3>
           <span class="text-xs font-medium text-slate-500 dark:text-slate-400">
             ${{ minPrice }} - ${{ maxPrice }}
           </span>
@@ -142,7 +145,7 @@ onMounted(loadCategories)
               step="50"
               class="mt-2 w-full accent-cyan-500 dark:accent-cyan-300"
               @change="updatePriceRange"
-            >
+            />
           </label>
           <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">
             Maximum
@@ -154,15 +157,15 @@ onMounted(loadCategories)
               step="50"
               class="mt-2 w-full accent-emerald-500 dark:accent-emerald-300"
               @change="updatePriceRange"
-            >
+            />
           </label>
         </div>
       </section>
 
-      <section class="space-y-3 rounded-2xl border border-white bg-white p-4 shadow-sm shadow-cyan-950/5 dark:border-cyan-400/10 dark:bg-slate-900">
-        <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100">
-          Brands
-        </h3>
+      <section
+        class="space-y-3 rounded-2xl border border-white bg-white p-4 shadow-sm shadow-cyan-950/5 dark:border-cyan-400/10 dark:bg-slate-900"
+      >
+        <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100">Brands</h3>
         <div v-if="facets.brands?.length" class="space-y-2">
           <label
             v-for="brand in facets.brands"
@@ -175,7 +178,7 @@ onMounted(loadCategories)
                 class="h-4 w-4 rounded border-slate-300 text-cyan-600 dark:border-slate-600 dark:bg-slate-900 dark:text-cyan-300"
                 :checked="modelValue.brand === brand.slug"
                 @change="toggleBrand(brand.slug)"
-              >
+              />
               <span class="truncate text-slate-700 dark:text-slate-200">{{ brand.name }}</span>
             </span>
             <span class="shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -183,27 +186,26 @@ onMounted(loadCategories)
             </span>
           </label>
         </div>
-        <p v-else class="rounded-xl bg-cyan-50 px-3 py-2 text-sm text-slate-500 dark:bg-slate-950 dark:text-slate-400">
+        <p
+          v-else
+          class="rounded-xl bg-cyan-50 px-3 py-2 text-sm text-slate-500 dark:bg-slate-950 dark:text-slate-400"
+        >
           No brand facets yet.
         </p>
       </section>
 
-      <section class="space-y-3 rounded-2xl border border-white bg-white p-4 shadow-sm shadow-cyan-950/5 dark:border-cyan-400/10 dark:bg-slate-900">
-        <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100">
-          Category
-        </h3>
+      <section
+        class="space-y-3 rounded-2xl border border-white bg-white p-4 shadow-sm shadow-cyan-950/5 dark:border-cyan-400/10 dark:bg-slate-900"
+      >
+        <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100">Category</h3>
         <select
           class="w-full rounded-xl border border-cyan-100 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-cyan-300 dark:focus:ring-cyan-950/60"
           :value="modelValue.category || ''"
           @change="updateFilter('category', $event.target.value)"
         >
           <option value="">All categories</option>
-          <option
-            v-for="category in flattenedCategories"
-            :key="category.id"
-            :value="category.slug"
-          >
-            {{ `${'-- '.repeat(category.depth)}${category.name}` }}
+          <option v-for="category in flattenedCategories" :key="category.id" :value="category.slug">
+            {{ `${"-- ".repeat(category.depth)}${category.name}` }}
           </option>
         </select>
         <p v-if="isLoadingCategories" class="text-xs text-slate-500 dark:text-slate-400">

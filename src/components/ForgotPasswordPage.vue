@@ -1,66 +1,66 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref } from "vue";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
-const emit = defineEmits(['back-to-login'])
+const emit = defineEmits(["back-to-login"]);
 
-const email = ref('')
-const errorMessage = ref('')
-const successMessage = ref('')
-const isSubmitting = ref(false)
+const email = ref("");
+const errorMessage = ref("");
+const successMessage = ref("");
+const isSubmitting = ref(false);
 
 const emailError = computed(() => {
-  const value = email.value.trim()
+  const value = email.value.trim();
   if (!value) {
-    return 'Email is required.'
+    return "Email is required.";
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-    return 'Enter a valid email address.'
+    return "Enter a valid email address.";
   }
-  return ''
-})
+  return "";
+});
 
 function parseResetRequestError(payload) {
   if (payload?.email?.length) {
-    return payload.email[0]
+    return payload.email[0];
   }
   if (payload?.detail) {
-    return payload.detail
+    return payload.detail;
   }
-  return 'Could not request a password reset.'
+  return "Could not request a password reset.";
 }
 
 async function submitForgotPassword() {
-  errorMessage.value = ''
-  successMessage.value = ''
+  errorMessage.value = "";
+  successMessage.value = "";
 
   if (emailError.value) {
-    errorMessage.value = emailError.value
-    return
+    errorMessage.value = emailError.value;
+    return;
   }
 
-  isSubmitting.value = true
+  isSubmitting.value = true;
 
   try {
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/password-reset/`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ email: email.value.trim() }),
-    })
-    const payload = await response.json().catch(() => ({}))
+    });
+    const payload = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(parseResetRequestError(payload))
+      throw new Error(parseResetRequestError(payload));
     }
 
-    successMessage.value = payload.message || 'If an account exists, a reset link has been sent.'
+    successMessage.value = payload.message || "If an account exists, a reset link has been sent.";
   } catch (error) {
-    errorMessage.value = error.message || 'Could not request a password reset.'
+    errorMessage.value = error.message || "Could not request a password reset.";
   } finally {
-    isSubmitting.value = false
+    isSubmitting.value = false;
   }
 }
 </script>
@@ -68,7 +68,9 @@ async function submitForgotPassword() {
 <template>
   <main class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white">
     <section class="grid min-h-[calc(100vh-81px)] bg-white lg:grid-cols-[minmax(0,1fr)_420px]">
-      <div class="flex flex-col justify-between border-r border-slate-200 px-6 py-10 sm:px-10 lg:px-14">
+      <div
+        class="flex flex-col justify-between border-r border-slate-200 px-6 py-10 sm:px-10 lg:px-14"
+      >
         <div>
           <p class="text-sm font-semibold uppercase text-emerald-700">Password help</p>
           <h1 class="mt-4 max-w-2xl text-4xl font-semibold text-slate-950">
@@ -119,14 +121,14 @@ async function submitForgotPassword() {
             class="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm text-slate-950 outline-none transition focus:border-slate-950"
             type="email"
             autocomplete="email"
-          >
+          />
 
           <button
             class="mt-7 inline-flex h-11 w-full items-center justify-center rounded-md bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
             type="submit"
             :disabled="isSubmitting"
           >
-            {{ isSubmitting ? 'Sending link...' : 'Send reset link' }}
+            {{ isSubmitting ? "Sending link..." : "Send reset link" }}
           </button>
         </form>
       </div>
