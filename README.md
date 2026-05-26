@@ -37,16 +37,16 @@ Key areas include:
 
 ## Tech Stack
 
-| Area | Technology |
-| --- | --- |
-| Framework | Vue 3 |
-| Build tool | Vite |
-| State | Pinia |
-| Routing | Vue Router |
-| Styling | Tailwind CSS |
-| Payments | Stripe.js |
-| Charts | Chart.js |
-| Testing | Vitest, jsdom |
+| Area       | Technology    |
+| ---------- | ------------- |
+| Framework  | Vue 3         |
+| Build tool | Vite          |
+| State      | Pinia         |
+| Routing    | Vue Router    |
+| Styling    | Tailwind CSS  |
+| Payments   | Stripe.js     |
+| Charts     | Chart.js      |
+| Testing    | Vitest, jsdom |
 
 ## Backend Integration
 
@@ -120,13 +120,13 @@ docker compose exec frontend npm run build
 
 ## Source Layout
 
-| Path | Purpose |
-| --- | --- |
-| `src/components` | Page-level and reusable UI components |
-| `src/stores` | Pinia stores for auth, chat, theme, wishlist, and shared state |
-| `src/router` | Routes and role-based navigation guards |
-| `src/assets` | Static frontend assets |
-| `src/main.js` | Vue app bootstrap |
+| Path             | Purpose                                                        |
+| ---------------- | -------------------------------------------------------------- |
+| `src/components` | Page-level and reusable UI components                          |
+| `src/stores`     | Pinia stores for auth, chat, theme, wishlist, and shared state |
+| `src/router`     | Routes and role-based navigation guards                        |
+| `src/assets`     | Static frontend assets                                         |
+| `src/main.js`    | Vue app bootstrap                                              |
 
 ## Quality Checks
 

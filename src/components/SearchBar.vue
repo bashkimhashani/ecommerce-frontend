@@ -1,181 +1,172 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-const query = ref(readQueryFromUrl())
-const suggestions = ref([])
-const isLoading = ref(false)
-const errorMessage = ref('')
-const isOpen = ref(false)
-const selectedIndex = ref(-1)
-let debounceTimer = null
-let abortController = null
-let suppressNextSuggestionLoad = false
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const query = ref(readQueryFromUrl());
+const suggestions = ref([]);
+const isLoading = ref(false);
+const errorMessage = ref("");
+const isOpen = ref(false);
+const selectedIndex = ref(-1);
+let debounceTimer = null;
+let abortController = null;
+let suppressNextSuggestionLoad = false;
 
-const hasSuggestions = computed(() => suggestions.value.length > 0)
+const hasSuggestions = computed(() => suggestions.value.length > 0);
 
 function readQueryFromUrl() {
-  if (typeof window === 'undefined') {
-    return ''
+  if (typeof window === "undefined") {
+    return "";
   }
 
-  return new URLSearchParams(window.location.search).get('q') || ''
+  return new URLSearchParams(window.location.search).get("q") || "";
 }
 
 function syncQueryToUrl(nextQuery) {
-  if (typeof window === 'undefined') {
-    return
+  if (typeof window === "undefined") {
+    return;
   }
 
-  const params = new URLSearchParams(window.location.search)
-  const cleanQuery = nextQuery.trim()
+  const params = new URLSearchParams(window.location.search);
+  const cleanQuery = nextQuery.trim();
 
   if (cleanQuery) {
-    params.set('q', cleanQuery)
+    params.set("q", cleanQuery);
   } else {
-    params.delete('q')
+    params.delete("q");
   }
 
-  const queryString = params.toString()
-  const nextSearch = queryString ? `?${queryString}` : ''
-  const nextUrl = `${window.location.pathname}${nextSearch}${window.location.hash}`
-  const currentUrl = (
-    `${window.location.pathname}${window.location.search}${window.location.hash}`
-  )
+  const queryString = params.toString();
+  const nextSearch = queryString ? `?${queryString}` : "";
+  const nextUrl = `${window.location.pathname}${nextSearch}${window.location.hash}`;
+  const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
   if (nextUrl !== currentUrl) {
-    window.history.pushState({}, '', nextUrl)
+    window.history.pushState({}, "", nextUrl);
   }
 
-  window.dispatchEvent(new CustomEvent('catalog-search-change'))
+  window.dispatchEvent(new CustomEvent("catalog-search-change"));
 }
 
 function resetDropdown() {
-  suggestions.value = []
-  selectedIndex.value = -1
-  isOpen.value = false
+  suggestions.value = [];
+  selectedIndex.value = -1;
+  isOpen.value = false;
 }
 
 async function loadSuggestions(searchTerm) {
-  const cleanQuery = searchTerm.trim()
+  const cleanQuery = searchTerm.trim();
 
   if (cleanQuery.length < 2) {
-    resetDropdown()
-    return
+    resetDropdown();
+    return;
   }
 
-  abortController?.abort()
-  abortController = new AbortController()
-  isLoading.value = true
-  errorMessage.value = ''
+  abortController?.abort();
+  abortController = new AbortController();
+  isLoading.value = true;
+  errorMessage.value = "";
 
   try {
-    const params = new URLSearchParams({ q: cleanQuery })
+    const params = new URLSearchParams({ q: cleanQuery });
     const response = await fetch(
       `${apiBaseUrl}/api/v1/catalog/autocomplete/?${params.toString()}`,
-      { signal: abortController.signal },
-    )
+      { signal: abortController.signal }
+    );
 
     if (!response.ok) {
-      throw new Error('Could not load suggestions.')
+      throw new Error("Could not load suggestions.");
     }
 
-    const payload = await response.json()
-    suggestions.value = payload.suggestions || []
-    selectedIndex.value = suggestions.value.length ? 0 : -1
-    isOpen.value = true
+    const payload = await response.json();
+    suggestions.value = payload.suggestions || [];
+    selectedIndex.value = suggestions.value.length ? 0 : -1;
+    isOpen.value = true;
   } catch (error) {
-    if (error.name !== 'AbortError') {
-      errorMessage.value = error.message || 'Could not load suggestions.'
-      suggestions.value = []
-      isOpen.value = true
+    if (error.name !== "AbortError") {
+      errorMessage.value = error.message || "Could not load suggestions.";
+      suggestions.value = [];
+      isOpen.value = true;
     }
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
 }
 
 function submitSearch(nextQuery = query.value) {
-  suppressNextSuggestionLoad = true
-  query.value = nextQuery
-  syncQueryToUrl(nextQuery)
-  resetDropdown()
+  suppressNextSuggestionLoad = true;
+  query.value = nextQuery;
+  syncQueryToUrl(nextQuery);
+  resetDropdown();
 }
 
 function clearSearch() {
-  suppressNextSuggestionLoad = true
-  query.value = ''
-  syncQueryToUrl('')
-  resetDropdown()
+  suppressNextSuggestionLoad = true;
+  query.value = "";
+  syncQueryToUrl("");
+  resetDropdown();
 }
 
 function selectSuggestion(suggestion) {
-  submitSearch(suggestion)
+  submitSearch(suggestion);
 }
 
 function moveSelection(direction) {
   if (!hasSuggestions.value) {
-    return
+    return;
   }
 
-  const lastIndex = suggestions.value.length - 1
-  if (direction === 'next') {
-    selectedIndex.value = (
-      selectedIndex.value >= lastIndex ? 0 : selectedIndex.value + 1
-    )
+  const lastIndex = suggestions.value.length - 1;
+  if (direction === "next") {
+    selectedIndex.value = selectedIndex.value >= lastIndex ? 0 : selectedIndex.value + 1;
   } else {
-    selectedIndex.value = (
-      selectedIndex.value <= 0 ? lastIndex : selectedIndex.value - 1
-    )
+    selectedIndex.value = selectedIndex.value <= 0 ? lastIndex : selectedIndex.value - 1;
   }
 }
 
 function handleEnter() {
   if (isOpen.value && selectedIndex.value >= 0) {
-    selectSuggestion(suggestions.value[selectedIndex.value])
-    return
+    selectSuggestion(suggestions.value[selectedIndex.value]);
+    return;
   }
 
-  submitSearch()
+  submitSearch();
 }
 
 function handleOutsideClick(event) {
-  if (
-    event.target instanceof Element
-    && !event.target.closest('[data-search-bar]')
-  ) {
-    isOpen.value = false
+  if (event.target instanceof Element && !event.target.closest("[data-search-bar]")) {
+    isOpen.value = false;
   }
 }
 
 function handleUrlSearchChange() {
-  query.value = readQueryFromUrl()
+  query.value = readQueryFromUrl();
 }
 
 watch(query, (nextQuery) => {
-  window.clearTimeout(debounceTimer)
+  window.clearTimeout(debounceTimer);
 
   if (suppressNextSuggestionLoad) {
-    suppressNextSuggestionLoad = false
-    return
+    suppressNextSuggestionLoad = false;
+    return;
   }
 
   debounceTimer = window.setTimeout(() => {
-    loadSuggestions(nextQuery)
-  }, 250)
-})
+    loadSuggestions(nextQuery);
+  }, 250);
+});
 
 onMounted(() => {
-  window.addEventListener('click', handleOutsideClick)
-  window.addEventListener('popstate', handleUrlSearchChange)
-})
+  window.addEventListener("click", handleOutsideClick);
+  window.addEventListener("popstate", handleUrlSearchChange);
+});
 
 onBeforeUnmount(() => {
-  window.clearTimeout(debounceTimer)
-  abortController?.abort()
-  window.removeEventListener('click', handleOutsideClick)
-  window.removeEventListener('popstate', handleUrlSearchChange)
-})
+  window.clearTimeout(debounceTimer);
+  abortController?.abort();
+  window.removeEventListener("click", handleOutsideClick);
+  window.removeEventListener("popstate", handleUrlSearchChange);
+});
 </script>
 
 <template>
@@ -196,7 +187,7 @@ onBeforeUnmount(() => {
         @keydown.up.prevent="moveSelection('previous')"
         @keydown.enter.prevent="handleEnter"
         @keydown.esc="isOpen = false"
-      >
+      />
 
       <button
         v-if="query"
@@ -227,14 +218,14 @@ onBeforeUnmount(() => {
         {{ errorMessage }}
       </div>
       <ul v-else-if="hasSuggestions" class="max-h-72 overflow-y-auto py-1">
-        <li
-          v-for="(suggestion, index) in suggestions"
-          :key="suggestion"
-        >
+        <li v-for="(suggestion, index) in suggestions" :key="suggestion">
           <button
             type="button"
             class="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-cyan-50 dark:text-slate-200 dark:hover:bg-cyan-950/40"
-            :class="{ 'bg-cyan-50 text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-100': index === selectedIndex }"
+            :class="{
+              'bg-cyan-50 text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-100':
+                index === selectedIndex,
+            }"
             @mousedown.prevent="selectSuggestion(suggestion)"
           >
             {{ suggestion }}
