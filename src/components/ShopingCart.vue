@@ -154,7 +154,7 @@ onMounted(loadCart)
 <template>
   <div>
     <button
-      class="fixed right-5 top-5 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-950 text-white shadow-lg transition hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-300 dark:focus:ring-offset-slate-950"
+      class="fixed bottom-24 right-6 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-cyan-500 text-white shadow-xl shadow-cyan-950/25 transition hover:-translate-y-0.5 hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:ring-offset-2 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200 dark:focus:ring-offset-slate-950"
       type="button"
       aria-label="Open cart"
       @click="openDrawer"
@@ -168,7 +168,7 @@ onMounted(loadCart)
 
       <span
         v-if="itemCount"
-        class="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 text-xs font-semibold text-neutral-950"
+        class="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-amber-300 px-1.5 text-xs font-black text-slate-950"
       >
         {{ itemCount }}
       </span>
@@ -176,19 +176,19 @@ onMounted(loadCart)
 
     <div
       v-if="isOpen"
-      class="fixed inset-0 z-40 bg-neutral-950/55"
+      class="fixed inset-0 z-40 bg-slate-950/65 backdrop-blur-sm"
       aria-hidden="true"
       @click="closeDrawer"
     />
 
     <aside
       v-if="isOpen"
-      class="fixed right-0 top-0 z-50 flex h-full w-full max-w-md transform flex-col bg-white text-neutral-950 shadow-2xl transition-transform duration-200 dark:bg-slate-950 dark:text-slate-100"
+      class="fixed right-0 top-0 z-50 flex h-full w-full max-w-md transform flex-col bg-white text-neutral-950 shadow-2xl shadow-cyan-950/20 transition-transform duration-200 dark:bg-slate-950 dark:text-slate-100"
       aria-label="Shopping cart"
     >
-      <header class="flex items-center justify-between border-b border-neutral-200 px-5 py-4 dark:border-slate-700">
+      <header class="flex items-center justify-between border-b border-cyan-100 bg-cyan-50/70 px-5 py-4 dark:border-cyan-400/10 dark:bg-slate-900">
         <div>
-          <h2 class="text-lg font-semibold text-neutral-950 dark:text-white">Cart</h2>
+          <h2 class="text-lg font-black text-neutral-950 dark:text-white">Cart</h2>
           <p class="text-sm text-neutral-500 dark:text-slate-400">{{ itemCount }} items</p>
         </div>
 
@@ -224,7 +224,7 @@ onMounted(loadCart)
           <li
             v-for="item in cart.items"
             :key="item.id"
-            class="rounded-md border border-neutral-200 p-3 dark:border-slate-700 dark:bg-slate-900"
+            class="rounded-2xl border border-cyan-100 bg-white p-3 shadow-sm shadow-cyan-950/5 dark:border-cyan-400/10 dark:bg-slate-900"
           >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
@@ -285,13 +285,13 @@ onMounted(loadCart)
         </ul>
       </div>
 
-      <footer class="border-t border-neutral-200 p-5 dark:border-slate-700">
+      <footer class="border-t border-cyan-100 bg-slate-50/80 p-5 dark:border-cyan-400/10 dark:bg-slate-900">
         <div class="flex items-center justify-between text-base font-semibold text-neutral-950 dark:text-white">
           <span>Subtotal</span>
           <span>${{ subtotal }}</span>
         </div>
         <button
-          class="mt-4 h-11 w-full rounded-md bg-emerald-600 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-neutral-300 dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+          class="mt-4 h-11 w-full rounded-xl bg-emerald-500 text-sm font-black text-white shadow-lg shadow-emerald-950/20 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-neutral-300 dark:bg-emerald-400 dark:text-slate-950 dark:hover:bg-emerald-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
           type="button"
           :disabled="!itemCount"
           @click="startCheckout"
