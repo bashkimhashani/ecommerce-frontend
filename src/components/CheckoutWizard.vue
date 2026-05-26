@@ -1,21 +1,11 @@
 <script setup>
 import { loadStripe } from "@stripe/stripe-js";
-import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  reactive,
-  ref,
-  watch,
-} from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 
 const emit = defineEmits(["close"]);
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-const STRIPE_PUBLISHABLE_KEY =
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
 const STEP_KEY = "vendora.checkout.step";
 const ADDRESS_KEY = "vendora.checkout.address";
 const IDEMPOTENCY_KEY = "vendora.checkout.idempotencyKey";
@@ -68,27 +58,20 @@ let isApplyingHistoryStep = false;
 const activeStepIndex = computed(() =>
   Math.max(
     0,
-    steps.findIndex((step) => step.id === currentStep.value),
-  ),
+    steps.findIndex((step) => step.id === currentStep.value)
+  )
 );
 const subtotal = computed(() => Number(cart.value?.subtotal || 0).toFixed(2));
-const shippingEstimate = computed(() =>
-  Number(subtotal.value) > 0 ? 6.99 : 0,
-);
-const total = computed(() =>
-  (Number(subtotal.value) + shippingEstimate.value).toFixed(2),
-);
+const shippingEstimate = computed(() => (Number(subtotal.value) > 0 ? 6.99 : 0));
+const total = computed(() => (Number(subtotal.value) + shippingEstimate.value).toFixed(2));
 const maskedCard = computed(() =>
   paymentSummary.value?.payment_intent_id
     ? `Stripe payment ${paymentSummary.value.status}`
-    : "Payment details pending",
+    : "Payment details pending"
 );
 const canSubmitPayment = computed(
   () =>
-    payment.cardholder.trim() &&
-    cardElementReady.value &&
-    cardComplete.value &&
-    !isSubmitting.value,
+    payment.cardholder.trim() && cardElementReady.value && cardComplete.value && !isSubmitting.value
 );
 
 watch(currentStep, (step) => {
@@ -110,12 +93,11 @@ watch(
   () => {
     sessionStorage.setItem(ADDRESS_KEY, JSON.stringify({ ...address }));
   },
-  { deep: true },
+  { deep: true }
 );
 
 function authHeaders() {
-  const token =
-    localStorage.getItem("accessToken") || localStorage.getItem("access");
+  const token = localStorage.getItem("accessToken") || localStorage.getItem("access");
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -157,13 +139,10 @@ async function submitAddress() {
 
   try {
     const session = await ensureCheckoutSession();
-    checkoutSession.value = await apiRequest(
-      `/api/v1/checkout/session/${session.id}/address/`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({ ...address }),
-      },
-    );
+    checkoutSession.value = await apiRequest(`/api/v1/checkout/session/${session.id}/address/`, {
+      method: "PATCH",
+      body: JSON.stringify({ ...address }),
+    });
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(checkoutSession.value));
     setCheckoutStep("payment");
   } catch (error) {
@@ -207,20 +186,17 @@ async function submitPayment() {
       {
         method: "POST",
         body: JSON.stringify({}),
-      },
+      }
     );
 
-    const result = await stripeInstance.confirmCardPayment(
-      paymentIntent.client_secret,
-      {
-        payment_method: {
-          card: cardElement,
-          billing_details: {
-            name: payment.cardholder.trim(),
-          },
+    const result = await stripeInstance.confirmCardPayment(paymentIntent.client_secret, {
+      payment_method: {
+        card: cardElement,
+        billing_details: {
+          name: payment.cardholder.trim(),
         },
       },
-    );
+    });
 
     if (result.error) {
       throw new Error(result.error.message || "Card payment failed.");
@@ -345,8 +321,7 @@ function getIdempotencyKey() {
     return existingKey;
   }
 
-  const generatedKey =
-    window.crypto?.randomUUID?.() || `checkout-${Date.now()}`;
+  const generatedKey = window.crypto?.randomUUID?.() || `checkout-${Date.now()}`;
   sessionStorage.setItem(IDEMPOTENCY_KEY, generatedKey);
   return generatedKey;
 }
@@ -373,7 +348,7 @@ function initializeCheckoutHistory() {
       checkoutStep: currentStep.value,
     },
     "",
-    window.location.href,
+    window.location.href
   );
   window.addEventListener("popstate", handlePopState);
 }
@@ -394,7 +369,7 @@ function pushCheckoutHistory(step) {
       checkoutStep: step,
     },
     "",
-    window.location.href,
+    window.location.href
   );
 }
 
@@ -464,13 +439,8 @@ onBeforeUnmount(() => {
       class="mb-6 flex flex-col gap-4 border-b border-neutral-200 pb-5 sm:flex-row sm:items-end sm:justify-between"
     >
       <div>
-        <p class="text-sm font-semibold uppercase text-emerald-700">
-          Secure checkout
-        </p>
-        <h1
-          id="checkout-title"
-          class="mt-2 text-3xl font-bold text-neutral-950"
-        >
+        <p class="text-sm font-semibold uppercase text-emerald-700">Secure checkout</p>
+        <h1 id="checkout-title" class="mt-2 text-3xl font-bold text-neutral-950">
           Complete your order
         </h1>
       </div>
@@ -515,11 +485,7 @@ onBeforeUnmount(() => {
 
     <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
       <div class="rounded-md border border-neutral-200 bg-white p-5 shadow-sm">
-        <form
-          v-if="currentStep === 'address'"
-          class="grid gap-4"
-          @submit.prevent="submitAddress"
-        >
+        <form v-if="currentStep === 'address'" class="grid gap-4" @submit.prevent="submitAddress">
           <div class="grid gap-4 sm:grid-cols-2">
             <label class="grid gap-1 text-sm font-medium text-neutral-700">
               Full name
@@ -628,9 +594,7 @@ onBeforeUnmount(() => {
             </p>
           </div>
 
-          <div
-            class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-between"
-          >
+          <div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-between">
             <button
               class="h-11 rounded-md border border-neutral-300 px-5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
               type="button"
@@ -643,36 +607,27 @@ onBeforeUnmount(() => {
               type="submit"
               :disabled="!canSubmitPayment"
             >
-              {{
-                isSubmitting ? "Processing payment..." : "Pay and review order"
-              }}
+              {{ isSubmitting ? "Processing payment..." : "Pay and review order" }}
             </button>
           </div>
         </form>
 
         <div v-else class="grid gap-5">
           <div class="rounded-md border border-emerald-200 bg-emerald-50 p-4">
-            <h2 class="text-lg font-semibold text-emerald-950">
-              Checkout details saved
-            </h2>
+            <h2 class="text-lg font-semibold text-emerald-950">Checkout details saved</h2>
             <p class="mt-1 text-sm text-emerald-800">
-              Your address and payment details are ready for the final order
-              creation step.
+              Your address and payment details are ready for the final order creation step.
             </p>
           </div>
 
           <dl class="grid gap-3 text-sm">
-            <div
-              class="flex justify-between gap-4 border-b border-neutral-100 pb-3"
-            >
+            <div class="flex justify-between gap-4 border-b border-neutral-100 pb-3">
               <dt class="text-neutral-500">Checkout session</dt>
               <dd class="font-semibold text-neutral-950">
                 #{{ checkoutSession?.id || "Pending" }}
               </dd>
             </div>
-            <div
-              class="flex justify-between gap-4 border-b border-neutral-100 pb-3"
-            >
+            <div class="flex justify-between gap-4 border-b border-neutral-100 pb-3">
               <dt class="text-neutral-500">Ship to</dt>
               <dd class="text-right font-semibold text-neutral-950">
                 {{ address.city }}, {{ address.country }}
@@ -684,9 +639,7 @@ onBeforeUnmount(() => {
             </div>
           </dl>
 
-          <div
-            class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between"
-          >
+          <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
             <button
               class="h-11 rounded-md border border-neutral-300 px-5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
               type="button"
@@ -720,20 +673,14 @@ onBeforeUnmount(() => {
         </div>
 
         <ul v-else class="mt-4 space-y-3">
-          <li
-            v-for="item in cart.items"
-            :key="item.id"
-            class="flex justify-between gap-3 text-sm"
-          >
+          <li v-for="item in cart.items" :key="item.id" class="flex justify-between gap-3 text-sm">
             <div class="min-w-0">
               <p class="truncate font-medium text-neutral-950">
                 {{ item.product_name || `Variant #${item.product_variant_id}` }}
               </p>
               <p class="text-neutral-500">Qty {{ item.quantity }}</p>
             </div>
-            <p class="font-semibold text-neutral-950">
-              ${{ Number(item.line_total).toFixed(2) }}
-            </p>
+            <p class="font-semibold text-neutral-950">${{ Number(item.line_total).toFixed(2) }}</p>
           </li>
         </ul>
 
@@ -744,9 +691,7 @@ onBeforeUnmount(() => {
           </div>
           <div class="flex justify-between">
             <span class="text-neutral-500">Shipping</span>
-            <span class="font-medium text-neutral-950"
-              >${{ shippingEstimate.toFixed(2) }}</span
-            >
+            <span class="font-medium text-neutral-950">${{ shippingEstimate.toFixed(2) }}</span>
           </div>
           <div
             class="flex justify-between border-t border-neutral-200 pt-3 text-base font-bold text-neutral-950"

@@ -3,12 +3,16 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 html {
-  transition: background-color 220ms ease, color 220ms ease;
+  transition:
+    background-color 220ms ease,
+    color 220ms ease;
 }
 
 body {
   min-width: 320px;
-  transition: background-color 220ms ease, color 220ms ease;
+  transition:
+    background-color 220ms ease,
+    color 220ms ease;
 }
 
 button,
@@ -25,7 +29,9 @@ main {
 
 .page-fade-enter-active,
 .page-fade-leave-active {
-  transition: opacity 180ms ease, transform 180ms ease;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 
 .page-fade-enter-from,

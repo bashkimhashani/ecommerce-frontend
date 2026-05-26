@@ -1,115 +1,115 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref } from "vue";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 const props = defineProps({
   uid: {
     type: String,
-    default: '',
+    default: "",
   },
   token: {
     type: String,
-    default: '',
+    default: "",
   },
-})
+});
 
-const emit = defineEmits(['back-to-login'])
+const emit = defineEmits(["back-to-login"]);
 
 const form = reactive({
-  newPassword: '',
-  confirmPassword: '',
-})
+  newPassword: "",
+  confirmPassword: "",
+});
 const touched = reactive({
   newPassword: false,
   confirmPassword: false,
-})
-const errorMessage = ref('')
-const successMessage = ref('')
-const isSubmitting = ref(false)
+});
+const errorMessage = ref("");
+const successMessage = ref("");
+const isSubmitting = ref(false);
 
 const errors = computed(() => {
-  const nextErrors = {}
+  const nextErrors = {};
   if (!form.newPassword) {
-    nextErrors.newPassword = 'New password is required.'
+    nextErrors.newPassword = "New password is required.";
   } else if (form.newPassword.length < 8) {
-    nextErrors.newPassword = 'Password must be at least 8 characters.'
+    nextErrors.newPassword = "Password must be at least 8 characters.";
   }
   if (!form.confirmPassword) {
-    nextErrors.confirmPassword = 'Confirm your new password.'
+    nextErrors.confirmPassword = "Confirm your new password.";
   } else if (form.confirmPassword !== form.newPassword) {
-    nextErrors.confirmPassword = 'Passwords do not match.'
+    nextErrors.confirmPassword = "Passwords do not match.";
   }
-  return nextErrors
-})
+  return nextErrors;
+});
 
-const hasResetToken = computed(() => props.uid && props.token)
+const hasResetToken = computed(() => props.uid && props.token);
 
 function fieldError(field) {
-  return touched[field] ? errors.value[field] : ''
+  return touched[field] ? errors.value[field] : "";
 }
 
 function touchAllFields() {
   Object.keys(touched).forEach((field) => {
-    touched[field] = true
-  })
+    touched[field] = true;
+  });
 }
 
 function parseResetConfirmError(payload) {
   if (payload?.new_password?.length) {
-    return payload.new_password[0]
+    return payload.new_password[0];
   }
   if (payload?.token?.length) {
-    return payload.token[0]
+    return payload.token[0];
   }
   if (payload?.non_field_errors?.length) {
-    return payload.non_field_errors[0]
+    return payload.non_field_errors[0];
   }
   if (payload?.detail) {
-    return payload.detail
+    return payload.detail;
   }
-  return 'Could not reset your password.'
+  return "Could not reset your password.";
 }
 
 async function submitResetPassword() {
-  touchAllFields()
-  errorMessage.value = ''
-  successMessage.value = ''
+  touchAllFields();
+  errorMessage.value = "";
+  successMessage.value = "";
 
   if (!hasResetToken.value) {
-    errorMessage.value = 'This reset link is missing required token details.'
-    return
+    errorMessage.value = "This reset link is missing required token details.";
+    return;
   }
   if (Object.keys(errors.value).length > 0) {
-    errorMessage.value = 'Fix the highlighted fields before continuing.'
-    return
+    errorMessage.value = "Fix the highlighted fields before continuing.";
+    return;
   }
 
-  isSubmitting.value = true
+  isSubmitting.value = true;
 
   try {
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/password-reset/confirm/`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         uid: props.uid,
         token: props.token,
         new_password: form.newPassword,
       }),
-    })
-    const payload = await response.json().catch(() => ({}))
+    });
+    const payload = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(parseResetConfirmError(payload))
+      throw new Error(parseResetConfirmError(payload));
     }
 
-    successMessage.value = payload.message || 'Password has been reset successfully.'
+    successMessage.value = payload.message || "Password has been reset successfully.";
   } catch (error) {
-    errorMessage.value = error.message || 'Could not reset your password.'
+    errorMessage.value = error.message || "Could not reset your password.";
   } finally {
-    isSubmitting.value = false
+    isSubmitting.value = false;
   }
 }
 </script>
@@ -117,7 +117,9 @@ async function submitResetPassword() {
 <template>
   <main class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white">
     <section class="grid min-h-[calc(100vh-81px)] bg-white lg:grid-cols-[minmax(0,1fr)_420px]">
-      <div class="flex flex-col justify-between border-r border-slate-200 px-6 py-10 sm:px-10 lg:px-14">
+      <div
+        class="flex flex-col justify-between border-r border-slate-200 px-6 py-10 sm:px-10 lg:px-14"
+      >
         <div>
           <p class="text-sm font-semibold uppercase text-emerald-700">New password</p>
           <h1 class="mt-4 max-w-2xl text-4xl font-semibold text-slate-950">
@@ -170,9 +172,9 @@ async function submitResetPassword() {
             type="password"
             autocomplete="new-password"
             @blur="touched.newPassword = true"
-          >
+          />
           <p v-if="fieldError('newPassword')" class="mt-1 text-xs text-red-600">
-            {{ fieldError('newPassword') }}
+            {{ fieldError("newPassword") }}
           </p>
 
           <label class="mt-5 block text-sm font-medium text-slate-700" for="reset-confirm-password">
@@ -186,9 +188,9 @@ async function submitResetPassword() {
             type="password"
             autocomplete="new-password"
             @blur="touched.confirmPassword = true"
-          >
+          />
           <p v-if="fieldError('confirmPassword')" class="mt-1 text-xs text-red-600">
-            {{ fieldError('confirmPassword') }}
+            {{ fieldError("confirmPassword") }}
           </p>
 
           <button
@@ -196,7 +198,7 @@ async function submitResetPassword() {
             type="submit"
             :disabled="isSubmitting"
           >
-            {{ isSubmitting ? 'Resetting password...' : 'Reset password' }}
+            {{ isSubmitting ? "Resetting password..." : "Reset password" }}
           </button>
         </form>
       </div>

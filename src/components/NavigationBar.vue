@@ -2,25 +2,27 @@
 defineProps({
   selectedSlug: {
     type: String,
-    default: '',
+    default: "",
   },
-})
+});
 
-const emit = defineEmits(['select-category'])
+const emit = defineEmits(["select-category"]);
 
 const categories = [
-  { name: 'Laptops', slug: 'laptops' },
-  { name: 'Desktop PCs', slug: 'desktop-pcs' },
-  { name: 'Networking', slug: 'networking' },
-  { name: 'Printers', slug: 'printers' },
-  { name: 'PC Parts', slug: 'pc-parts' },
-  { name: 'Repairs', slug: 'repairs' },
-]
+  { name: "Laptops", slug: "laptops" },
+  { name: "Desktop PCs", slug: "desktop-pcs" },
+  { name: "Networking", slug: "networking" },
+  { name: "Printers", slug: "printers" },
+  { name: "PC Parts", slug: "pc-parts" },
+  { name: "Repairs", slug: "repairs" },
+];
 </script>
 
 <template>
   <nav class="flex-1 overflow-x-auto" aria-label="Product categories">
-    <ul class="flex min-w-max items-center gap-5 text-sm font-medium text-neutral-600 dark:text-slate-400">
+    <ul
+      class="flex min-w-max items-center gap-5 text-sm font-medium text-neutral-600 dark:text-slate-400"
+    >
       <li v-for="category in categories" :key="category.slug">
         <button
           type="button"

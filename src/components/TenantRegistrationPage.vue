@@ -1,45 +1,45 @@
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
-import { useAuthStore } from '../stores/authStore'
+import { computed, reactive, ref, watch } from "vue";
+import { useAuthStore } from "../stores/authStore";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
-const emit = defineEmits(['tenant-register-success'])
-const authStore = useAuthStore()
+const emit = defineEmits(["tenant-register-success"]);
+const authStore = useAuthStore();
 
 const plans = [
   {
-    id: 'free',
-    name: 'Free',
-    price: '$0',
-    summary: 'Launch with a small catalog.',
+    id: "free",
+    name: "Free",
+    price: "$0",
+    summary: "Launch with a small catalog.",
   },
   {
-    id: 'basic',
-    name: 'Basic',
-    price: '$29',
-    summary: 'Sell with operational tools.',
+    id: "basic",
+    name: "Basic",
+    price: "$29",
+    summary: "Sell with operational tools.",
   },
   {
-    id: 'premium',
-    name: 'Premium',
-    price: '$79',
-    summary: 'Scale with advanced access.',
+    id: "premium",
+    name: "Premium",
+    price: "$79",
+    summary: "Scale with advanced access.",
   },
-]
+];
 
 const form = reactive({
-  businessName: '',
-  slug: '',
-  domain: '',
-  plan: 'basic',
-  firstName: '',
-  lastName: '',
-  email: '',
-  phone: '',
-  password: '',
-  confirmPassword: '',
-})
+  businessName: "",
+  slug: "",
+  domain: "",
+  plan: "basic",
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  password: "",
+  confirmPassword: "",
+});
 const touched = reactive({
   businessName: false,
   slug: false,
@@ -50,132 +50,130 @@ const touched = reactive({
   phone: false,
   password: false,
   confirmPassword: false,
-})
-const autoSlug = ref(true)
-const isSubmitting = ref(false)
-const errorMessage = ref('')
-const successMessage = ref('')
+});
+const autoSlug = ref(true);
+const isSubmitting = ref(false);
+const errorMessage = ref("");
+const successMessage = ref("");
 
 const errors = computed(() => {
-  const nextErrors = {}
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  const domainPattern = /^(?=.{1,255}$)(?!-)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/
-  const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+  const nextErrors = {};
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const domainPattern =
+    /^(?=.{1,255}$)(?!-)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
+  const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
   if (!form.businessName.trim()) {
-    nextErrors.businessName = 'Business name is required.'
+    nextErrors.businessName = "Business name is required.";
   }
   if (!form.slug.trim()) {
-    nextErrors.slug = 'Store slug is required.'
+    nextErrors.slug = "Store slug is required.";
   } else if (!slugPattern.test(form.slug.trim())) {
-    nextErrors.slug = 'Use lowercase letters, numbers, and hyphens.'
+    nextErrors.slug = "Use lowercase letters, numbers, and hyphens.";
   }
   if (!form.domain.trim()) {
-    nextErrors.domain = 'Business domain is required.'
+    nextErrors.domain = "Business domain is required.";
   } else if (!domainPattern.test(form.domain.trim().toLowerCase())) {
-    nextErrors.domain = 'Enter a valid domain name.'
+    nextErrors.domain = "Enter a valid domain name.";
   }
   if (!form.firstName.trim()) {
-    nextErrors.firstName = 'First name is required.'
+    nextErrors.firstName = "First name is required.";
   }
   if (!form.lastName.trim()) {
-    nextErrors.lastName = 'Last name is required.'
+    nextErrors.lastName = "Last name is required.";
   }
   if (!form.email.trim()) {
-    nextErrors.email = 'Email is required.'
+    nextErrors.email = "Email is required.";
   } else if (!emailPattern.test(form.email.trim())) {
-    nextErrors.email = 'Enter a valid email address.'
+    nextErrors.email = "Enter a valid email address.";
   }
   if (!form.password) {
-    nextErrors.password = 'Password is required.'
+    nextErrors.password = "Password is required.";
   } else if (form.password.length < 8) {
-    nextErrors.password = 'Password must be at least 8 characters.'
+    nextErrors.password = "Password must be at least 8 characters.";
   }
   if (!form.confirmPassword) {
-    nextErrors.confirmPassword = 'Confirm your password.'
+    nextErrors.confirmPassword = "Confirm your password.";
   } else if (form.confirmPassword !== form.password) {
-    nextErrors.confirmPassword = 'Passwords do not match.'
+    nextErrors.confirmPassword = "Passwords do not match.";
   }
 
-  return nextErrors
-})
+  return nextErrors;
+});
 
-const canSubmit = computed(() => (
-  Object.keys(errors.value).length === 0 &&
-  !isSubmitting.value
-))
+const canSubmit = computed(() => Object.keys(errors.value).length === 0 && !isSubmitting.value);
 
 watch(
   () => form.businessName,
   (businessName) => {
     if (autoSlug.value) {
-      form.slug = slugify(businessName)
+      form.slug = slugify(businessName);
     }
-  },
-)
+  }
+);
 
 function slugify(value) {
   return value
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function fieldError(field) {
-  return touched[field] ? errors.value[field] : ''
+  return touched[field] ? errors.value[field] : "";
 }
 
 function touchAllFields() {
   Object.keys(touched).forEach((field) => {
-    touched[field] = true
-  })
+    touched[field] = true;
+  });
 }
 
 function parseTenantRegistrationError(payload) {
   const fieldErrors = [
-    'name',
-    'slug',
-    'domain',
-    'plan',
-    'email',
-    'first_name',
-    'last_name',
-    'password',
-    'phone',
-  ]
+    "name",
+    "slug",
+    "domain",
+    "plan",
+    "email",
+    "first_name",
+    "last_name",
+    "password",
+    "phone",
+  ];
 
   for (const field of fieldErrors) {
     if (payload?.[field]?.length) {
-      return payload[field][0]
+      return payload[field][0];
     }
   }
   if (payload?.non_field_errors?.length) {
-    return payload.non_field_errors[0]
+    return payload.non_field_errors[0];
   }
   if (payload?.detail) {
-    return payload.detail
+    return payload.detail;
   }
-  return 'Could not register your business.'
+  return "Could not register your business.";
 }
 
 async function submitTenantRegistration() {
-  touchAllFields()
-  errorMessage.value = ''
-  successMessage.value = ''
+  touchAllFields();
+  errorMessage.value = "";
+  successMessage.value = "";
 
   if (!canSubmit.value) {
-    errorMessage.value = 'Fix the highlighted fields before continuing.'
-    return
+    errorMessage.value = "Fix the highlighted fields before continuing.";
+    return;
   }
 
-  isSubmitting.value = true
+  isSubmitting.value = true;
 
   try {
     const response = await fetch(`${API_BASE_URL}/api/v1/tenants/register/`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         name: form.businessName.trim(),
@@ -188,20 +186,20 @@ async function submitTenantRegistration() {
         phone: form.phone.trim(),
         password: form.password,
       }),
-    })
-    const payload = await response.json().catch(() => ({}))
+    });
+    const payload = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(parseTenantRegistrationError(payload))
+      throw new Error(parseTenantRegistrationError(payload));
     }
 
-    authStore.setSession(payload)
-    successMessage.value = 'Business account created successfully.'
-    emit('tenant-register-success', payload)
+    authStore.setSession(payload);
+    successMessage.value = "Business account created successfully.";
+    emit("tenant-register-success", payload);
   } catch (error) {
-    errorMessage.value = error.message || 'Could not register your business.'
+    errorMessage.value = error.message || "Could not register your business.";
   } finally {
-    isSubmitting.value = false
+    isSubmitting.value = false;
   }
 }
 </script>
@@ -209,7 +207,9 @@ async function submitTenantRegistration() {
 <template>
   <main class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white">
     <section class="grid min-h-[calc(100vh-81px)] bg-white lg:grid-cols-[minmax(0,1fr)_560px]">
-      <div class="flex flex-col justify-between border-r border-slate-200 px-6 py-10 sm:px-10 lg:px-14">
+      <div
+        class="flex flex-col justify-between border-r border-slate-200 px-6 py-10 sm:px-10 lg:px-14"
+      >
         <div>
           <p class="text-sm font-semibold uppercase text-emerald-700">Vendor onboarding</p>
           <h1 class="mt-4 max-w-2xl text-4xl font-semibold text-slate-950">
@@ -240,7 +240,9 @@ async function submitTenantRegistration() {
         <form class="w-full" novalidate @submit.prevent="submitTenantRegistration">
           <div>
             <h2 class="text-2xl font-semibold text-slate-950">Business registration</h2>
-            <p class="mt-2 text-sm text-slate-500">Business, plan, and owner details are required.</p>
+            <p class="mt-2 text-sm text-slate-500">
+              Business, plan, and owner details are required.
+            </p>
           </div>
 
           <div
@@ -272,9 +274,9 @@ async function submitTenantRegistration() {
               type="text"
               autocomplete="organization"
               @blur="touched.businessName = true"
-            >
+            />
             <p v-if="fieldError('businessName')" class="mt-1 text-xs text-red-600">
-              {{ fieldError('businessName') }}
+              {{ fieldError("businessName") }}
             </p>
 
             <div class="mt-4 grid gap-4 sm:grid-cols-2">
@@ -291,9 +293,9 @@ async function submitTenantRegistration() {
                   autocomplete="off"
                   @input="autoSlug = false"
                   @blur="touched.slug = true"
-                >
+                />
                 <p v-if="fieldError('slug')" class="mt-1 text-xs text-red-600">
-                  {{ fieldError('slug') }}
+                  {{ fieldError("slug") }}
                 </p>
               </div>
 
@@ -310,9 +312,9 @@ async function submitTenantRegistration() {
                   placeholder="shop.example.com"
                   autocomplete="url"
                   @blur="touched.domain = true"
-                >
+                />
                 <p v-if="fieldError('domain')" class="mt-1 text-xs text-red-600">
-                  {{ fieldError('domain') }}
+                  {{ fieldError("domain") }}
                 </p>
               </div>
             </div>
@@ -325,11 +327,23 @@ async function submitTenantRegistration() {
                 v-for="plan in plans"
                 :key="plan.id"
                 class="rounded-md border p-4 transition"
-                :class="form.plan === plan.id ? 'border-slate-950 bg-slate-50' : 'border-slate-200 bg-white hover:border-slate-400'"
+                :class="
+                  form.plan === plan.id
+                    ? 'border-slate-950 bg-slate-50'
+                    : 'border-slate-200 bg-white hover:border-slate-400'
+                "
               >
-                <input v-model="form.plan" class="sr-only" type="radio" name="tenant-plan" :value="plan.id">
+                <input
+                  v-model="form.plan"
+                  class="sr-only"
+                  type="radio"
+                  name="tenant-plan"
+                  :value="plan.id"
+                />
                 <span class="block text-sm font-semibold text-slate-950">{{ plan.name }}</span>
-                <span class="mt-2 block text-xl font-semibold text-slate-950">{{ plan.price }}</span>
+                <span class="mt-2 block text-xl font-semibold text-slate-950">{{
+                  plan.price
+                }}</span>
                 <span class="mt-1 block text-xs leading-5 text-slate-500">{{ plan.summary }}</span>
               </label>
             </div>
@@ -351,9 +365,9 @@ async function submitTenantRegistration() {
                   type="text"
                   autocomplete="given-name"
                   @blur="touched.firstName = true"
-                >
+                />
                 <p v-if="fieldError('firstName')" class="mt-1 text-xs text-red-600">
-                  {{ fieldError('firstName') }}
+                  {{ fieldError("firstName") }}
                 </p>
               </div>
 
@@ -369,9 +383,9 @@ async function submitTenantRegistration() {
                   type="text"
                   autocomplete="family-name"
                   @blur="touched.lastName = true"
-                >
+                />
                 <p v-if="fieldError('lastName')" class="mt-1 text-xs text-red-600">
-                  {{ fieldError('lastName') }}
+                  {{ fieldError("lastName") }}
                 </p>
               </div>
             </div>
@@ -387,9 +401,9 @@ async function submitTenantRegistration() {
               type="email"
               autocomplete="email"
               @blur="touched.email = true"
-            >
+            />
             <p v-if="fieldError('email')" class="mt-1 text-xs text-red-600">
-              {{ fieldError('email') }}
+              {{ fieldError("email") }}
             </p>
 
             <label class="mt-4 block text-sm font-medium text-slate-700" for="tenant-phone">
@@ -402,7 +416,7 @@ async function submitTenantRegistration() {
               type="tel"
               autocomplete="tel"
               @blur="touched.phone = true"
-            >
+            />
 
             <div class="mt-4 grid gap-4 sm:grid-cols-2">
               <div>
@@ -417,14 +431,17 @@ async function submitTenantRegistration() {
                   type="password"
                   autocomplete="new-password"
                   @blur="touched.password = true"
-                >
+                />
                 <p v-if="fieldError('password')" class="mt-1 text-xs text-red-600">
-                  {{ fieldError('password') }}
+                  {{ fieldError("password") }}
                 </p>
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-slate-700" for="tenant-confirm-password">
+                <label
+                  class="block text-sm font-medium text-slate-700"
+                  for="tenant-confirm-password"
+                >
                   Confirm password
                 </label>
                 <input
@@ -435,9 +452,9 @@ async function submitTenantRegistration() {
                   type="password"
                   autocomplete="new-password"
                   @blur="touched.confirmPassword = true"
-                >
+                />
                 <p v-if="fieldError('confirmPassword')" class="mt-1 text-xs text-red-600">
-                  {{ fieldError('confirmPassword') }}
+                  {{ fieldError("confirmPassword") }}
                 </p>
               </div>
             </div>
@@ -448,7 +465,7 @@ async function submitTenantRegistration() {
             type="submit"
             :disabled="isSubmitting"
           >
-            {{ isSubmitting ? 'Creating storefront...' : 'Create storefront' }}
+            {{ isSubmitting ? "Creating storefront..." : "Create storefront" }}
           </button>
         </form>
       </div>

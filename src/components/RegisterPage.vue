@@ -1,129 +1,126 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
-import { useAuthStore } from '../stores/authStore'
+import { computed, reactive, ref } from "vue";
+import { useAuthStore } from "../stores/authStore";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
-const emit = defineEmits(['register-success'])
-const authStore = useAuthStore()
+const emit = defineEmits(["register-success"]);
+const authStore = useAuthStore();
 
 const form = reactive({
-  firstName: '',
-  lastName: '',
-  email: '',
-  password: '',
-  confirmPassword: '',
-})
+  firstName: "",
+  lastName: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+});
 const touched = reactive({
   firstName: false,
   lastName: false,
   email: false,
   password: false,
   confirmPassword: false,
-})
-const isSubmitting = ref(false)
-const errorMessage = ref('')
-const successMessage = ref('')
+});
+const isSubmitting = ref(false);
+const errorMessage = ref("");
+const successMessage = ref("");
 
 const errors = computed(() => {
-  const nextErrors = {}
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const nextErrors = {};
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   if (!form.firstName.trim()) {
-    nextErrors.firstName = 'First name is required.'
+    nextErrors.firstName = "First name is required.";
   }
   if (!form.lastName.trim()) {
-    nextErrors.lastName = 'Last name is required.'
+    nextErrors.lastName = "Last name is required.";
   }
   if (!form.email.trim()) {
-    nextErrors.email = 'Email is required.'
+    nextErrors.email = "Email is required.";
   } else if (!emailPattern.test(form.email.trim())) {
-    nextErrors.email = 'Enter a valid email address.'
+    nextErrors.email = "Enter a valid email address.";
   }
   if (!form.password) {
-    nextErrors.password = 'Password is required.'
+    nextErrors.password = "Password is required.";
   } else if (form.password.length < 8) {
-    nextErrors.password = 'Password must be at least 8 characters.'
+    nextErrors.password = "Password must be at least 8 characters.";
   }
   if (!form.confirmPassword) {
-    nextErrors.confirmPassword = 'Confirm your password.'
+    nextErrors.confirmPassword = "Confirm your password.";
   } else if (form.confirmPassword !== form.password) {
-    nextErrors.confirmPassword = 'Passwords do not match.'
+    nextErrors.confirmPassword = "Passwords do not match.";
   }
 
-  return nextErrors
-})
+  return nextErrors;
+});
 
-const canSubmit = computed(() => (
-  Object.keys(errors.value).length === 0 &&
-  !isSubmitting.value
-))
+const canSubmit = computed(() => Object.keys(errors.value).length === 0 && !isSubmitting.value);
 
 function fieldError(field) {
-  return touched[field] ? errors.value[field] : ''
+  return touched[field] ? errors.value[field] : "";
 }
 
 function touchAllFields() {
   Object.keys(touched).forEach((field) => {
-    touched[field] = true
-  })
+    touched[field] = true;
+  });
 }
 
 function parseRegisterError(payload) {
-  const fieldErrors = ['email', 'first_name', 'last_name', 'password']
+  const fieldErrors = ["email", "first_name", "last_name", "password"];
   for (const field of fieldErrors) {
     if (payload?.[field]?.length) {
-      return payload[field][0]
+      return payload[field][0];
     }
   }
   if (payload?.non_field_errors?.length) {
-    return payload.non_field_errors[0]
+    return payload.non_field_errors[0];
   }
   if (payload?.detail) {
-    return payload.detail
+    return payload.detail;
   }
-  return 'Could not create your account.'
+  return "Could not create your account.";
 }
 
 async function submitRegistration() {
-  touchAllFields()
-  errorMessage.value = ''
-  successMessage.value = ''
+  touchAllFields();
+  errorMessage.value = "";
+  successMessage.value = "";
 
   if (!canSubmit.value) {
-    errorMessage.value = 'Fix the highlighted fields before continuing.'
-    return
+    errorMessage.value = "Fix the highlighted fields before continuing.";
+    return;
   }
 
-  isSubmitting.value = true
+  isSubmitting.value = true;
 
   try {
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/register/`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         email: form.email.trim(),
         first_name: form.firstName.trim(),
         last_name: form.lastName.trim(),
         password: form.password,
-        role: 'customer',
+        role: "customer",
       }),
-    })
-    const payload = await response.json().catch(() => ({}))
+    });
+    const payload = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(parseRegisterError(payload))
+      throw new Error(parseRegisterError(payload));
     }
 
-    authStore.setSession(payload)
-    successMessage.value = 'Account created successfully.'
-    emit('register-success', payload.user)
+    authStore.setSession(payload);
+    successMessage.value = "Account created successfully.";
+    emit("register-success", payload.user);
   } catch (error) {
-    errorMessage.value = error.message || 'Could not create your account.'
+    errorMessage.value = error.message || "Could not create your account.";
   } finally {
-    isSubmitting.value = false
+    isSubmitting.value = false;
   }
 }
 </script>
@@ -131,7 +128,9 @@ async function submitRegistration() {
 <template>
   <main class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white">
     <section class="grid min-h-[calc(100vh-81px)] bg-white lg:grid-cols-[minmax(0,1fr)_480px]">
-      <div class="flex flex-col justify-between border-r border-slate-200 px-6 py-10 sm:px-10 lg:px-14">
+      <div
+        class="flex flex-col justify-between border-r border-slate-200 px-6 py-10 sm:px-10 lg:px-14"
+      >
         <div>
           <p class="text-sm font-semibold uppercase text-emerald-700">Create account</p>
           <h1 class="mt-4 max-w-2xl text-4xl font-semibold text-slate-950">
@@ -193,9 +192,9 @@ async function submitRegistration() {
                 type="text"
                 autocomplete="given-name"
                 @blur="touched.firstName = true"
-              >
+              />
               <p v-if="fieldError('firstName')" class="mt-1 text-xs text-red-600">
-                {{ fieldError('firstName') }}
+                {{ fieldError("firstName") }}
               </p>
             </div>
 
@@ -211,9 +210,9 @@ async function submitRegistration() {
                 type="text"
                 autocomplete="family-name"
                 @blur="touched.lastName = true"
-              >
+              />
               <p v-if="fieldError('lastName')" class="mt-1 text-xs text-red-600">
-                {{ fieldError('lastName') }}
+                {{ fieldError("lastName") }}
               </p>
             </div>
           </div>
@@ -229,9 +228,9 @@ async function submitRegistration() {
             type="email"
             autocomplete="email"
             @blur="touched.email = true"
-          >
+          />
           <p v-if="fieldError('email')" class="mt-1 text-xs text-red-600">
-            {{ fieldError('email') }}
+            {{ fieldError("email") }}
           </p>
 
           <label class="mt-5 block text-sm font-medium text-slate-700" for="register-password">
@@ -245,12 +244,15 @@ async function submitRegistration() {
             type="password"
             autocomplete="new-password"
             @blur="touched.password = true"
-          >
+          />
           <p v-if="fieldError('password')" class="mt-1 text-xs text-red-600">
-            {{ fieldError('password') }}
+            {{ fieldError("password") }}
           </p>
 
-          <label class="mt-5 block text-sm font-medium text-slate-700" for="register-confirm-password">
+          <label
+            class="mt-5 block text-sm font-medium text-slate-700"
+            for="register-confirm-password"
+          >
             Confirm password
           </label>
           <input
@@ -261,9 +263,9 @@ async function submitRegistration() {
             type="password"
             autocomplete="new-password"
             @blur="touched.confirmPassword = true"
-          >
+          />
           <p v-if="fieldError('confirmPassword')" class="mt-1 text-xs text-red-600">
-            {{ fieldError('confirmPassword') }}
+            {{ fieldError("confirmPassword") }}
           </p>
 
           <button
@@ -271,7 +273,7 @@ async function submitRegistration() {
             type="submit"
             :disabled="isSubmitting"
           >
-            {{ isSubmitting ? 'Creating account...' : 'Create account' }}
+            {{ isSubmitting ? "Creating account..." : "Create account" }}
           </button>
         </form>
       </div>

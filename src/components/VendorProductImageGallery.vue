@@ -1,158 +1,155 @@
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from "vue";
 
 const props = defineProps({
   modelValue: {
     type: Array,
     default: () => [],
   },
-})
+});
 
-const emit = defineEmits([
-  'update:modelValue',
-  'reorder',
-  'remove',
-  'set-primary',
-  'upload',
-])
+const emit = defineEmits(["update:modelValue", "reorder", "remove", "set-primary", "upload"]);
 
-const fileInput = ref(null)
-const draggedImageId = ref(null)
-const objectUrls = new Set()
+const fileInput = ref(null);
+const draggedImageId = ref(null);
+const objectUrls = new Set();
 
 const sortedImages = computed(() => {
   return [...props.modelValue].sort((first, second) => {
-    return first.sort_order - second.sort_order || first.id - second.id
-  })
-})
+    return first.sort_order - second.sort_order || first.id - second.id;
+  });
+});
 
 function imageSource(image) {
-  return image.thumbnail || image.medium || image.image || image.previewUrl
+  return image.thumbnail || image.medium || image.image || image.previewUrl;
 }
 
 function normalizeSortOrder(images) {
   return images.map((image, index) => ({
     ...image,
     sort_order: index,
-  }))
+  }));
 }
 
 function updateImages(images) {
-  const normalizedImages = normalizeSortOrder(images)
-  emit('update:modelValue', normalizedImages)
-  emit('reorder', normalizedImages)
+  const normalizedImages = normalizeSortOrder(images);
+  emit("update:modelValue", normalizedImages);
+  emit("reorder", normalizedImages);
 }
 
 function moveImage(targetImageId) {
   if (!draggedImageId.value || draggedImageId.value === targetImageId) {
-    draggedImageId.value = null
-    return
+    draggedImageId.value = null;
+    return;
   }
 
-  const images = [...sortedImages.value]
-  const fromIndex = images.findIndex((image) => image.id === draggedImageId.value)
-  const toIndex = images.findIndex((image) => image.id === targetImageId)
+  const images = [...sortedImages.value];
+  const fromIndex = images.findIndex((image) => image.id === draggedImageId.value);
+  const toIndex = images.findIndex((image) => image.id === targetImageId);
 
   if (fromIndex === -1 || toIndex === -1) {
-    draggedImageId.value = null
-    return
+    draggedImageId.value = null;
+    return;
   }
 
-  const [movedImage] = images.splice(fromIndex, 1)
-  images.splice(toIndex, 0, movedImage)
-  draggedImageId.value = null
-  updateImages(images)
+  const [movedImage] = images.splice(fromIndex, 1);
+  images.splice(toIndex, 0, movedImage);
+  draggedImageId.value = null;
+  updateImages(images);
 }
 
 function updateAltText(imageId, altText) {
   const images = sortedImages.value.map((image) => {
     if (image.id !== imageId) {
-      return image
+      return image;
     }
 
     return {
       ...image,
       alt_text: altText,
-    }
-  })
+    };
+  });
 
-  emit('update:modelValue', images)
+  emit("update:modelValue", images);
 }
 
 function setPrimary(imageId) {
   const images = sortedImages.value.map((image) => ({
     ...image,
     is_primary: image.id === imageId,
-  }))
+  }));
 
-  emit('update:modelValue', images)
-  emit('set-primary', images.find((image) => image.id === imageId))
+  emit("update:modelValue", images);
+  emit(
+    "set-primary",
+    images.find((image) => image.id === imageId)
+  );
 }
 
 function removeImage(imageId) {
-  const imageToRemove = sortedImages.value.find((image) => image.id === imageId)
-  const images = normalizeSortOrder(sortedImages.value.filter((image) => image.id !== imageId))
+  const imageToRemove = sortedImages.value.find((image) => image.id === imageId);
+  const images = normalizeSortOrder(sortedImages.value.filter((image) => image.id !== imageId));
 
   if (imageToRemove?.previewUrl) {
-    URL.revokeObjectURL(imageToRemove.previewUrl)
-    objectUrls.delete(imageToRemove.previewUrl)
+    URL.revokeObjectURL(imageToRemove.previewUrl);
+    objectUrls.delete(imageToRemove.previewUrl);
   }
 
-  const hasPrimaryImage = images.some((image) => image.is_primary)
+  const hasPrimaryImage = images.some((image) => image.is_primary);
   const nextImages = images.map((image, index) => ({
     ...image,
     is_primary: hasPrimaryImage ? image.is_primary : index === 0,
-  }))
+  }));
 
-  emit('update:modelValue', nextImages)
-  emit('remove', imageToRemove)
+  emit("update:modelValue", nextImages);
+  emit("remove", imageToRemove);
 }
 
 function openFilePicker() {
-  fileInput.value?.click()
+  fileInput.value?.click();
 }
 
 function handleFileSelection(event) {
-  const files = Array.from(event.target.files || [])
+  const files = Array.from(event.target.files || []);
   if (!files.length) {
-    return
+    return;
   }
 
-  const currentImages = sortedImages.value
+  const currentImages = sortedImages.value;
   const nextImages = files.map((file, index) => {
-    const previewUrl = URL.createObjectURL(file)
-    objectUrls.add(previewUrl)
+    const previewUrl = URL.createObjectURL(file);
+    objectUrls.add(previewUrl);
 
     return {
       id: `local-${Date.now()}-${index}`,
       file,
       image: previewUrl,
       previewUrl,
-      alt_text: file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
+      alt_text: file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " "),
       sort_order: currentImages.length + index,
       is_primary: currentImages.length === 0 && index === 0,
-    }
-  })
+    };
+  });
 
-  const images = normalizeSortOrder([...currentImages, ...nextImages])
-  emit('update:modelValue', images)
-  emit('upload', files)
-  event.target.value = ''
+  const images = normalizeSortOrder([...currentImages, ...nextImages]);
+  emit("update:modelValue", images);
+  emit("upload", files);
+  event.target.value = "";
 }
 
 onBeforeUnmount(() => {
-  objectUrls.forEach((url) => URL.revokeObjectURL(url))
-})
+  objectUrls.forEach((url) => URL.revokeObjectURL(url));
+});
 </script>
 
 <template>
   <section class="rounded-md border border-slate-200 bg-white">
-    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+    <div
+      class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3"
+    >
       <div>
         <h2 class="text-sm font-semibold text-slate-950">Product images</h2>
-        <p class="mt-1 text-xs text-slate-500">
-          Drag images to reorder them.
-        </p>
+        <p class="mt-1 text-xs text-slate-500">Drag images to reorder them.</p>
       </div>
 
       <button
@@ -170,7 +167,7 @@ onBeforeUnmount(() => {
         multiple
         class="hidden"
         @change="handleFileSelection"
-      >
+      />
     </div>
 
     <div v-if="!sortedImages.length" class="px-4 py-10 text-center">
@@ -195,7 +192,7 @@ onBeforeUnmount(() => {
             :src="imageSource(image)"
             :alt="image.alt_text || 'Product image'"
             class="h-full w-full object-cover"
-          >
+          />
         </div>
 
         <div class="space-y-3 p-3">
@@ -218,7 +215,7 @@ onBeforeUnmount(() => {
               type="text"
               class="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-2 text-sm outline-none focus:border-slate-500"
               @input="updateAltText(image.id, $event.target.value)"
-            >
+            />
           </label>
 
           <div class="flex items-center gap-2">

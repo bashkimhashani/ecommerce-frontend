@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed } from "vue";
 
 const props = defineProps({
   category: {
@@ -16,26 +16,30 @@ const props = defineProps({
   },
   selectedSlug: {
     type: String,
-    default: '',
+    default: "",
   },
-})
+});
 
-const emit = defineEmits(['toggle', 'select'])
+const emit = defineEmits(["toggle", "select"]);
 
-const hasChildren = computed(() => Boolean(props.category.children?.length))
-const isExpanded = computed(() => props.expandedIds.has(props.category.id))
-const isSelected = computed(() => props.selectedSlug === props.category.slug)
+const hasChildren = computed(() => Boolean(props.category.children?.length));
+const isExpanded = computed(() => props.expandedIds.has(props.category.id));
+const isSelected = computed(() => props.selectedSlug === props.category.slug);
 
 const indentation = computed(() => ({
   paddingLeft: `${props.depth * 0.875}rem`,
-}))
+}));
 </script>
 
 <template>
   <li>
     <div
       class="group flex min-h-10 items-center gap-1 rounded-md pr-2 text-sm transition-colors"
-      :class="isSelected ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950' : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900'"
+      :class="
+        isSelected
+          ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950'
+          : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900'
+      "
       :style="indentation"
     >
       <button
@@ -61,7 +65,7 @@ const indentation = computed(() => ({
           :src="category.icon_url"
           :alt="`${category.name} icon`"
           class="h-4 w-4 shrink-0 object-contain"
-        >
+        />
         <span class="truncate">{{ category.name }}</span>
       </button>
     </div>

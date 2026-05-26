@@ -1,71 +1,69 @@
 <script setup>
-import { computed, ref } from 'vue'
-import { useAuthStore } from '../stores/authStore'
+import { computed, ref } from "vue";
+import { useAuthStore } from "../stores/authStore";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
-const emit = defineEmits(['forgot-password', 'login-success'])
-const authStore = useAuthStore()
+const emit = defineEmits(["forgot-password", "login-success"]);
+const authStore = useAuthStore();
 
-const email = ref('')
-const password = ref('')
-const errorMessage = ref('')
-const isSubmitting = ref(false)
+const email = ref("");
+const password = ref("");
+const errorMessage = ref("");
+const isSubmitting = ref(false);
 
-const canSubmit = computed(() => (
-  email.value.trim() !== '' &&
-  password.value !== '' &&
-  !isSubmitting.value
-))
+const canSubmit = computed(
+  () => email.value.trim() !== "" && password.value !== "" && !isSubmitting.value
+);
 
 function parseLoginError(payload) {
   if (payload?.detail) {
-    return payload.detail
+    return payload.detail;
   }
   if (payload?.email?.length) {
-    return payload.email[0]
+    return payload.email[0];
   }
   if (payload?.password?.length) {
-    return payload.password[0]
+    return payload.password[0];
   }
   if (payload?.non_field_errors?.length) {
-    return payload.non_field_errors[0]
+    return payload.non_field_errors[0];
   }
-  return 'Could not sign in with those credentials.'
+  return "Could not sign in with those credentials.";
 }
 
 async function submitLogin() {
   if (!canSubmit.value) {
-    errorMessage.value = 'Enter your email and password.'
-    return
+    errorMessage.value = "Enter your email and password.";
+    return;
   }
 
-  isSubmitting.value = true
-  errorMessage.value = ''
+  isSubmitting.value = true;
+  errorMessage.value = "";
 
   try {
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/login/`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         email: email.value.trim(),
         password: password.value,
       }),
-    })
-    const payload = await response.json().catch(() => ({}))
+    });
+    const payload = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(parseLoginError(payload))
+      throw new Error(parseLoginError(payload));
     }
 
-    authStore.setSession(payload)
-    emit('login-success', payload.user)
+    authStore.setSession(payload);
+    emit("login-success", payload.user);
   } catch (error) {
-    errorMessage.value = error.message || 'Could not sign in right now.'
+    errorMessage.value = error.message || "Could not sign in right now.";
   } finally {
-    isSubmitting.value = false
+    isSubmitting.value = false;
   }
 }
 </script>
@@ -73,9 +71,13 @@ async function submitLogin() {
 <template>
   <main class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white">
     <section class="grid min-h-[calc(100vh-81px)] bg-white lg:grid-cols-[minmax(0,1fr)_420px]">
-      <div class="flex flex-col justify-between border-r border-slate-200 px-6 py-10 sm:px-10 lg:px-14">
+      <div
+        class="flex flex-col justify-between border-r border-slate-200 px-6 py-10 sm:px-10 lg:px-14"
+      >
         <div>
-          <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">Vendora account</p>
+          <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">
+            Vendora account
+          </p>
           <h1 class="mt-4 max-w-2xl text-4xl font-semibold text-slate-950">
             Sign in to manage orders, inventory, and checkout.
           </h1>
@@ -125,7 +127,7 @@ async function submitLogin() {
             type="email"
             autocomplete="email"
             required
-          >
+          />
 
           <label class="mt-5 block text-sm font-medium text-slate-700" for="login-password">
             Password
@@ -137,14 +139,14 @@ async function submitLogin() {
             type="password"
             autocomplete="current-password"
             required
-          >
+          />
 
           <button
             class="mt-7 inline-flex h-11 w-full items-center justify-center rounded-md bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
             type="submit"
             :disabled="isSubmitting"
           >
-            {{ isSubmitting ? 'Signing in...' : 'Sign in' }}
+            {{ isSubmitting ? "Signing in..." : "Sign in" }}
           </button>
 
           <button
