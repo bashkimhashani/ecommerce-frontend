@@ -276,27 +276,68 @@ watch(
 
 <template>
   <section
-    class="flex min-w-0 flex-1 flex-col bg-white text-slate-950 dark:bg-slate-950 dark:text-slate-100 lg:flex-row"
+    class="flex min-w-0 flex-1 flex-col bg-transparent text-slate-950 dark:text-slate-100 lg:flex-row"
   >
     <FilterPanel v-model="activeFilters" :facets="facets" @clear="clearFilters" />
 
-    <div class="min-w-0 flex-1 px-6 py-5">
+    <div class="min-w-0 flex-1 px-5 py-5 sm:px-6">
       <div
-        class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-700"
+        class="mb-5 overflow-hidden rounded-2xl border border-cyan-100 bg-slate-950 text-white shadow-xl shadow-cyan-950/15 dark:border-cyan-400/10"
+      >
+        <div
+          class="bg-[linear-gradient(135deg,rgba(34,211,238,0.22),rgba(139,92,246,0.18)_45%,rgba(16,185,129,0.22))] px-5 py-5 sm:px-6"
+        >
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-[0.22em] text-cyan-200">
+                Live tech marketplace
+              </p>
+              <h1 class="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
+                {{ pageTitle }}
+              </h1>
+              <p class="mt-2 max-w-2xl text-sm font-medium text-slate-300">
+                {{ pageSubtitle }}
+              </p>
+            </div>
+
+            <div
+              class="grid min-w-40 gap-1 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-right backdrop-blur"
+            >
+              <span class="text-3xl font-black text-cyan-200">{{ products.length }}</span>
+              <span class="text-xs font-bold uppercase tracking-wide text-slate-300"
+                >products loaded</span
+              >
+            </div>
+          </div>
+
+          <div class="mt-5 flex flex-wrap gap-2 text-xs font-semibold">
+            <span class="rounded-full bg-cyan-400/15 px-3 py-1.5 text-cyan-100"
+              >Fast catalog search</span
+            >
+            <span class="rounded-full bg-emerald-400/15 px-3 py-1.5 text-emerald-100"
+              >Vendor verified stock</span
+            >
+            <span class="rounded-full bg-amber-400/15 px-3 py-1.5 text-amber-100"
+              >Repair services included</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="flex flex-wrap items-center justify-between gap-4 border-b border-cyan-100 pb-4 dark:border-cyan-400/10"
       >
         <div>
-          <h1 class="text-xl font-semibold text-slate-950 dark:text-white">
-            {{ pageTitle }}
-          </h1>
+          <h2 class="text-base font-bold text-slate-950 dark:text-white">Featured hardware</h2>
           <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {{ pageSubtitle }}
+            Compare devices, parts, and services from active vendors.
           </p>
         </div>
 
         <div
-          class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+          class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-950/40 dark:text-emerald-200"
         >
-          {{ products.length }} loaded
+          Updated inventory
         </div>
       </div>
 
@@ -305,20 +346,20 @@ watch(
           <div
             v-for="item in 9"
             :key="item"
-            class="h-80 animate-pulse rounded-md border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900"
+            class="h-80 animate-pulse rounded-2xl border border-cyan-100 bg-cyan-50/70 dark:border-cyan-400/10 dark:bg-slate-900"
           ></div>
         </div>
 
         <div
           v-else-if="errorMessage"
-          class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"
+          class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"
         >
           {{ errorMessage }}
         </div>
 
         <div
           v-else-if="!hasProducts"
-          class="rounded-md border border-slate-200 bg-slate-50 px-4 py-12 text-center dark:border-slate-700 dark:bg-slate-900"
+          class="rounded-2xl border border-cyan-100 bg-cyan-50/70 px-4 py-12 text-center dark:border-cyan-400/10 dark:bg-slate-900"
         >
           <p class="text-sm font-semibold text-slate-700 dark:text-slate-100">No products found.</p>
           <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -327,7 +368,7 @@ watch(
         </div>
 
         <template v-else>
-          <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             <ProductCard
               v-for="product in products"
               :key="product.id"
@@ -347,7 +388,7 @@ watch(
             <button
               v-else-if="nextPageUrl"
               type="button"
-              class="rounded-md border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
+              class="rounded-full border border-cyan-200 bg-white px-4 py-2 text-sm font-bold text-cyan-700 shadow-sm hover:bg-cyan-50 dark:border-cyan-400/20 dark:bg-slate-950 dark:text-cyan-200 dark:hover:bg-cyan-950/40"
               @click="loadNextPage"
             >
               Load more

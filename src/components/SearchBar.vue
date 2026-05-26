@@ -172,15 +172,15 @@ onBeforeUnmount(() => {
 <template>
   <div data-search-bar class="relative w-full max-w-md">
     <form
-      class="flex items-center rounded-md border border-slate-200 bg-white shadow-sm focus-within:border-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:focus-within:border-slate-500"
+      class="flex items-center rounded-2xl border border-cyan-200 bg-white shadow-sm shadow-cyan-900/10 focus-within:border-cyan-400 focus-within:ring-4 focus-within:ring-cyan-100 dark:border-cyan-400/20 dark:bg-slate-900 dark:focus-within:border-cyan-300 dark:focus-within:ring-cyan-950/70"
       @submit.prevent="submitSearch()"
     >
       <input
         v-model="query"
         type="search"
         autocomplete="off"
-        class="min-w-0 flex-1 rounded-l-md bg-transparent px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500"
-        placeholder="Search products"
+        class="min-w-0 flex-1 rounded-l-2xl bg-transparent px-4 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500"
+        placeholder="Search laptops, GPUs, routers"
         aria-label="Search products"
         @focus="isOpen = Boolean(query.trim().length >= 2)"
         @keydown.down.prevent="moveSelection('next')"
@@ -192,7 +192,7 @@ onBeforeUnmount(() => {
       <button
         v-if="query"
         type="button"
-        class="flex h-9 w-9 items-center justify-center text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200"
+        class="flex h-9 w-9 items-center justify-center text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-300"
         aria-label="Clear search"
         @click="clearSearch"
       >
@@ -201,7 +201,7 @@ onBeforeUnmount(() => {
 
       <button
         type="submit"
-        class="mr-1 rounded-md bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-300"
+        class="mr-1 rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-cyan-900/20 hover:bg-cyan-600 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300"
       >
         Search
       </button>
@@ -209,7 +209,7 @@ onBeforeUnmount(() => {
 
     <div
       v-if="isOpen"
-      class="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-950"
+      class="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-2xl border border-cyan-100 bg-white shadow-2xl shadow-cyan-950/15 dark:border-cyan-400/20 dark:bg-slate-950"
     >
       <div v-if="isLoading" class="px-3 py-3 text-sm text-slate-500 dark:text-slate-400">
         Loading suggestions...
@@ -221,8 +221,11 @@ onBeforeUnmount(() => {
         <li v-for="(suggestion, index) in suggestions" :key="suggestion">
           <button
             type="button"
-            class="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-900"
-            :class="{ 'bg-slate-100 dark:bg-slate-900': index === selectedIndex }"
+            class="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-cyan-50 dark:text-slate-200 dark:hover:bg-cyan-950/40"
+            :class="{
+              'bg-cyan-50 text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-100':
+                index === selectedIndex,
+            }"
             @mousedown.prevent="selectSuggestion(suggestion)"
           >
             {{ suggestion }}

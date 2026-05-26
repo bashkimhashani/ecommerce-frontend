@@ -158,7 +158,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div
-    class="flex min-h-screen flex-col bg-slate-50 text-slate-950 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100"
+    class="flex min-h-screen flex-col bg-transparent text-slate-950 transition-colors duration-300 dark:text-slate-100"
   >
     <Header
       :active-view="
@@ -221,11 +221,10 @@ onBeforeUnmount(() => {
         @back="showOrders"
       />
 
-      <div
-        v-else
-        class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white transition-colors duration-300 dark:border-slate-800 dark:bg-slate-900"
-      >
-        <main class="flex w-full bg-white transition-colors duration-300 dark:bg-slate-900">
+      <div v-else class="mx-auto w-full max-w-7xl px-3 pb-6 pt-4 sm:px-5 lg:px-6">
+        <main
+          class="flex w-full overflow-hidden rounded-2xl border border-white/70 bg-white/85 shadow-2xl shadow-cyan-950/10 backdrop-blur transition-colors duration-300 dark:border-cyan-400/10 dark:bg-slate-950/82 dark:shadow-black/40"
+        >
           <VendorDashboard v-if="activeView === 'vendor'" />
           <template v-else>
             <CategoryTree @select="selectCategory" />
@@ -250,7 +249,7 @@ onBeforeUnmount(() => {
     <button
       v-if="isScrollTopVisible"
       type="button"
-      class="fixed bottom-28 right-5 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-xl font-semibold leading-none text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+      class="fixed bottom-40 right-6 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-cyan-200 bg-white text-xl font-semibold leading-none text-cyan-700 shadow-lg shadow-cyan-900/15 transition hover:-translate-y-0.5 hover:border-cyan-400 hover:bg-cyan-50 dark:border-cyan-400/30 dark:bg-slate-950 dark:text-cyan-200 dark:hover:bg-slate-900"
       aria-label="Back to top"
       title="Back to top"
       @click="scrollToTop"

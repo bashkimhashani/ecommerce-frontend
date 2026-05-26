@@ -107,14 +107,16 @@ onMounted(loadCategories);
 
 <template>
   <aside
-    class="w-full shrink-0 border-b border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950 lg:w-72 lg:border-b-0 lg:border-r"
+    class="w-full shrink-0 border-b border-cyan-100 bg-slate-50/90 dark:border-cyan-400/10 dark:bg-slate-950/90 lg:w-72 lg:border-b-0 lg:border-r"
   >
     <div class="space-y-5 p-4">
       <div class="flex items-center justify-between gap-3">
-        <h2 class="text-sm font-semibold uppercase text-slate-500 dark:text-slate-400">Filters</h2>
+        <h2 class="text-sm font-black uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-300">
+          Filters
+        </h2>
         <button
           type="button"
-          class="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
+          class="rounded-full border border-rose-200 bg-white px-2.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-rose-400/20 dark:bg-slate-900 dark:text-rose-200 dark:hover:bg-rose-950/30"
           :disabled="!hasActiveFilters"
           @click="clearFilters"
         >
@@ -122,9 +124,11 @@ onMounted(loadCategories);
         </button>
       </div>
 
-      <section class="space-y-3">
+      <section
+        class="space-y-3 rounded-2xl border border-white bg-white p-4 shadow-sm shadow-cyan-950/5 dark:border-cyan-400/10 dark:bg-slate-900"
+      >
         <div class="flex items-center justify-between">
-          <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Price</h3>
+          <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100">Price</h3>
           <span class="text-xs font-medium text-slate-500 dark:text-slate-400">
             ${{ minPrice }} - ${{ maxPrice }}
           </span>
@@ -139,7 +143,7 @@ onMounted(loadCategories);
               min="0"
               max="3000"
               step="50"
-              class="mt-2 w-full accent-slate-900 dark:accent-slate-200"
+              class="mt-2 w-full accent-cyan-500 dark:accent-cyan-300"
               @change="updatePriceRange"
             />
           </label>
@@ -151,25 +155,27 @@ onMounted(loadCategories);
               min="0"
               max="3000"
               step="50"
-              class="mt-2 w-full accent-slate-900 dark:accent-slate-200"
+              class="mt-2 w-full accent-emerald-500 dark:accent-emerald-300"
               @change="updatePriceRange"
             />
           </label>
         </div>
       </section>
 
-      <section class="space-y-3">
-        <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Brands</h3>
+      <section
+        class="space-y-3 rounded-2xl border border-white bg-white p-4 shadow-sm shadow-cyan-950/5 dark:border-cyan-400/10 dark:bg-slate-900"
+      >
+        <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100">Brands</h3>
         <div v-if="facets.brands?.length" class="space-y-2">
           <label
             v-for="brand in facets.brands"
             :key="brand.slug"
-            class="flex items-center justify-between gap-3 rounded-md border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-900"
+            class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm hover:border-cyan-200 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-950/70 dark:hover:border-cyan-400/30 dark:hover:bg-cyan-950/30"
           >
             <span class="flex min-w-0 items-center gap-2">
               <input
                 type="checkbox"
-                class="h-4 w-4 rounded border-slate-300 text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+                class="h-4 w-4 rounded border-slate-300 text-cyan-600 dark:border-slate-600 dark:bg-slate-900 dark:text-cyan-300"
                 :checked="modelValue.brand === brand.slug"
                 @change="toggleBrand(brand.slug)"
               />
@@ -182,16 +188,18 @@ onMounted(loadCategories);
         </div>
         <p
           v-else
-          class="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-500 dark:bg-slate-900 dark:text-slate-400"
+          class="rounded-xl bg-cyan-50 px-3 py-2 text-sm text-slate-500 dark:bg-slate-950 dark:text-slate-400"
         >
           No brand facets yet.
         </p>
       </section>
 
-      <section class="space-y-3">
-        <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Category</h3>
+      <section
+        class="space-y-3 rounded-2xl border border-white bg-white p-4 shadow-sm shadow-cyan-950/5 dark:border-cyan-400/10 dark:bg-slate-900"
+      >
+        <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100">Category</h3>
         <select
-          class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-500"
+          class="w-full rounded-xl border border-cyan-100 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-cyan-300 dark:focus:ring-cyan-950/60"
           :value="modelValue.category || ''"
           @change="updateFilter('category', $event.target.value)"
         >

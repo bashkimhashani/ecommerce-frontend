@@ -74,19 +74,13 @@ onMounted(loadCategories);
 
 <template>
   <aside
-    class="w-full max-w-72 shrink-0 border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950"
+    class="w-full max-w-72 shrink-0 border-r border-cyan-100 bg-slate-950 text-slate-100 dark:border-cyan-400/10 dark:bg-slate-950"
   >
     <div class="flex h-full flex-col">
-      <div class="border-b border-slate-200 px-4 py-4 dark:border-slate-700">
+      <div class="border-b border-cyan-400/10 px-4 py-4">
         <div class="flex items-center justify-between gap-3">
-          <h2
-            class="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400"
-          >
-            Categories
-          </h2>
-          <span
-            class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-          >
+          <h2 class="text-sm font-black uppercase tracking-[0.18em] text-cyan-300">Categories</h2>
+          <span class="rounded-full bg-cyan-300 px-2 py-0.5 text-xs font-black text-slate-950">
             {{ categoryCount }}
           </span>
         </div>
@@ -97,21 +91,15 @@ onMounted(loadCategories);
           <div
             v-for="item in 6"
             :key="item"
-            class="h-9 animate-pulse rounded-md bg-slate-100 dark:bg-slate-800"
+            class="h-9 animate-pulse rounded-xl bg-slate-800"
           ></div>
         </div>
 
-        <p
-          v-else-if="errorMessage"
-          class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-200"
-        >
+        <p v-else-if="errorMessage" class="rounded-xl bg-red-950/40 px-3 py-2 text-sm text-red-200">
           {{ errorMessage }}
         </p>
 
-        <p
-          v-else-if="!categories.length"
-          class="px-1 py-2 text-sm text-slate-500 dark:text-slate-400"
-        >
+        <p v-else-if="!categories.length" class="px-1 py-2 text-sm text-slate-400">
           No categories found.
         </p>
 
