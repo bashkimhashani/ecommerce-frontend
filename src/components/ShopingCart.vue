@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 const emit = defineEmits(["checkout"]);
 
@@ -148,7 +148,18 @@ function isPending(item) {
   return pendingItemIds.value.has(item.id);
 }
 
-onMounted(loadCart);
+function handleCartItemAdded() {
+  loadCart();
+}
+
+onMounted(() => {
+  loadCart();
+  window.addEventListener("cart:item-added", handleCartItemAdded);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("cart:item-added", handleCartItemAdded);
+});
 </script>
 
 <template>
