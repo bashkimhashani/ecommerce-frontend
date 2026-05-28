@@ -170,16 +170,16 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div data-search-bar class="relative w-full max-w-md">
+  <div data-search-bar class="relative w-full">
     <form
-      class="flex items-center rounded-2xl border border-cyan-200 bg-white shadow-sm shadow-cyan-900/10 focus-within:border-cyan-400 focus-within:ring-4 focus-within:ring-cyan-100 dark:border-cyan-400/20 dark:bg-slate-900 dark:focus-within:border-cyan-300 dark:focus-within:ring-cyan-950/70"
+      class="flex items-center rounded-xl border border-cyan-200 bg-white shadow-sm shadow-cyan-900/10 focus-within:border-cyan-400 focus-within:ring-4 focus-within:ring-cyan-100 dark:border-cyan-400/20 dark:bg-slate-900 dark:focus-within:border-cyan-300 dark:focus-within:ring-cyan-950/70"
       @submit.prevent="submitSearch()"
     >
       <input
         v-model="query"
         type="search"
         autocomplete="off"
-        class="min-w-0 flex-1 rounded-l-2xl bg-transparent px-4 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500"
+        class="min-w-0 flex-1 rounded-l-xl bg-transparent px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500"
         placeholder="Search laptops, GPUs, routers"
         aria-label="Search products"
         @focus="isOpen = Boolean(query.trim().length >= 2)"
@@ -201,7 +201,7 @@ onBeforeUnmount(() => {
 
       <button
         type="submit"
-        class="mr-1 rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-cyan-900/20 hover:bg-cyan-600 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300"
+        class="mr-1 rounded-lg bg-cyan-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm shadow-cyan-900/20 hover:bg-cyan-600 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300"
       >
         Search
       </button>

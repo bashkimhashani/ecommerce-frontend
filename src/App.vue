@@ -3,7 +3,6 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import AppFooter from "./components/AppFooter.vue";
-import CategoryTree from "./components/CategoryTree.vue";
 import ChatWidget from "./components/ChatWidget.vue";
 import CheckoutWizard from "./components/CheckoutWizard.vue";
 import ForgotPasswordPage from "./components/ForgotPasswordPage.vue";
@@ -158,7 +157,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div
-    class="flex min-h-screen flex-col bg-transparent text-slate-950 transition-colors duration-300 dark:text-slate-100"
+    class="flex h-screen flex-col overflow-hidden bg-transparent text-slate-950 transition-colors duration-300 dark:text-slate-100"
   >
     <Header
       :active-view="
@@ -221,13 +220,12 @@ onBeforeUnmount(() => {
         @back="showOrders"
       />
 
-      <div v-else class="mx-auto w-full max-w-7xl px-3 pb-6 pt-4 sm:px-5 lg:px-6">
+      <div v-else class="mx-auto flex min-h-0 w-full max-w-7xl flex-1 px-3 py-3 sm:px-4">
         <main
-          class="flex w-full overflow-hidden rounded-2xl border border-white/70 bg-white/85 shadow-2xl shadow-cyan-950/10 backdrop-blur transition-colors duration-300 dark:border-cyan-400/10 dark:bg-slate-950/82 dark:shadow-black/40"
+          class="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-white/70 bg-white/90 shadow-xl shadow-cyan-950/10 backdrop-blur transition-colors duration-300 dark:border-cyan-400/10 dark:bg-slate-950/90 dark:shadow-black/40"
         >
           <VendorDashboard v-if="activeView === 'vendor'" />
           <template v-else>
-            <CategoryTree @select="selectCategory" />
             <ProductDetailPage
               v-if="selectedProductSlug"
               :slug="selectedProductSlug"
@@ -245,7 +243,7 @@ onBeforeUnmount(() => {
 
     <ShopingCart v-if="!isCheckoutOpen" @checkout="openCheckout" />
     <ChatWidget @view-product="openProductFromChat" />
-    <AppFooter />
+    <AppFooter class="hidden" />
     <button
       v-if="isScrollTopVisible"
       type="button"

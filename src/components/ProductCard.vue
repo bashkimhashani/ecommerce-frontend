@@ -24,14 +24,6 @@ const formattedPrice = computed(() => {
   }).format(numericPrice);
 });
 
-const ratingLabel = computed(() => {
-  if (props.product.avg_rating === null || props.product.avg_rating === undefined) {
-    return "New";
-  }
-
-  return Number(props.product.avg_rating).toFixed(1);
-});
-
 const vendorName = computed(() => {
   return props.product.vendor?.store_name || props.product.vendor_name || "";
 });
@@ -58,7 +50,7 @@ watch(
 
 <template>
   <article
-    class="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-cyan-100 bg-white shadow-lg shadow-cyan-950/8 transition hover:-translate-y-1 hover:border-cyan-300 hover:shadow-2xl hover:shadow-cyan-950/15 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 dark:border-cyan-400/10 dark:bg-slate-900 dark:shadow-black/20 dark:hover:border-cyan-400/40 dark:focus:ring-cyan-300 dark:focus:ring-offset-slate-950"
+    class="group grid h-full min-h-0 cursor-pointer grid-cols-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-cyan-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/20 dark:hover:border-cyan-400/40 dark:focus:ring-cyan-300 dark:focus:ring-offset-slate-950"
     role="button"
     tabindex="0"
     :aria-label="`View ${product.name}`"
@@ -67,23 +59,18 @@ watch(
     @keydown.space.prevent="viewProduct"
   >
     <div
-      class="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-cyan-50 via-slate-100 to-emerald-50 dark:from-slate-800 dark:via-slate-900 dark:to-cyan-950"
+      class="relative flex h-full min-h-0 items-center justify-center overflow-hidden bg-slate-50 p-2 dark:bg-slate-800"
     >
-      <div
-        class="absolute left-3 top-3 z-10 rounded-full bg-slate-950/85 px-2.5 py-1 text-xs font-bold text-cyan-100 backdrop-blur dark:bg-cyan-300 dark:text-slate-950"
-      >
-        Tech pick
-      </div>
       <img
         v-if="product.thumbnail"
         :src="product.thumbnail"
         :alt="product.name"
-        class="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+        class="max-h-full max-w-full object-contain transition duration-300 group-hover:scale-[1.03]"
         loading="lazy"
       />
       <div
         v-else
-        class="flex h-full items-center justify-center bg-gradient-to-br from-cyan-100 via-white to-emerald-100 px-4 text-center dark:from-slate-800 dark:via-slate-900 dark:to-cyan-950"
+        class="flex h-full items-center justify-center bg-slate-100 px-4 text-center dark:bg-slate-800"
       >
         <span class="text-sm font-medium text-slate-500 dark:text-slate-300">
           {{ product.name }}
@@ -92,7 +79,7 @@ watch(
 
       <button
         type="button"
-        class="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/90 text-slate-600 shadow-sm backdrop-blur transition hover:scale-105 hover:bg-white hover:text-rose-600 dark:border-slate-600 dark:bg-slate-950/90 dark:text-slate-200 dark:hover:bg-slate-900 dark:hover:text-rose-300"
+        class="absolute left-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/70 bg-white/90 text-slate-600 shadow-sm backdrop-blur transition hover:scale-105 hover:bg-white hover:text-rose-600 dark:border-slate-600 dark:bg-slate-950/90 dark:text-slate-200 dark:hover:bg-slate-900 dark:hover:text-rose-300"
         :class="{ 'text-rose-600': isWishlisted }"
         :aria-pressed="isWishlisted"
         :aria-label="isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'"
@@ -116,41 +103,31 @@ watch(
       </button>
     </div>
 
-    <div class="flex flex-1 flex-col p-4">
-      <div class="flex items-start justify-between gap-3">
-        <h2 class="min-w-0 text-sm font-black leading-5 text-slate-950 dark:text-slate-50">
+    <div class="flex min-h-0 flex-col p-3">
+      <div class="min-w-0">
+        <h2 class="line-clamp-2 min-w-0 text-sm font-bold leading-5 text-slate-950 dark:text-slate-50">
           {{ product.name }}
         </h2>
-        <span
-          class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-700 dark:bg-amber-400/15 dark:text-amber-200"
-        >
-          {{ ratingLabel === "New" ? ratingLabel : `${ratingLabel} rating` }}
+      </div>
+
+      <div class="mt-1 flex min-w-0 items-center">
+        <span class="min-w-0 truncate text-xs font-medium text-slate-500 dark:text-slate-400">
+          {{ product.slug }}
         </span>
       </div>
 
-      <p class="mt-1 truncate text-xs font-medium text-slate-500 dark:text-slate-400">
-        {{ product.slug }}
-      </p>
-
       <p
         v-if="vendorName"
-        class="mt-3 truncate rounded-full border border-cyan-100 bg-cyan-50 px-2.5 py-1 text-xs font-bold text-cyan-800 dark:border-cyan-800/80 dark:bg-cyan-950/60 dark:text-cyan-200"
-        :title="`Added by ${vendorName}`"
+        class="mt-2 truncate rounded-lg border border-cyan-100 bg-cyan-50 px-2 py-0.5 text-xs font-bold text-cyan-800 dark:border-cyan-800/80 dark:bg-cyan-950/60 dark:text-cyan-200"
+        :title="vendorName"
       >
-        Added by {{ vendorName }}
+        {{ vendorName }}
       </p>
 
-      <div class="mt-auto flex items-center justify-between gap-3 pt-4">
-        <p class="text-lg font-black text-emerald-600 dark:text-emerald-300">
+      <div class="mt-auto flex items-center justify-between gap-3 pt-2">
+        <p class="text-base font-black text-emerald-600 dark:text-emerald-300">
           {{ formattedPrice }}
         </p>
-        <button
-          type="button"
-          class="rounded-xl bg-slate-950 px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-cyan-600 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300"
-          @click.stop="viewProduct"
-        >
-          View
-        </button>
       </div>
     </div>
   </article>

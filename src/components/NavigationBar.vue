@@ -19,14 +19,14 @@ const categories = [
 </script>
 
 <template>
-  <nav class="flex-1 overflow-x-auto" aria-label="Product categories">
+  <nav class="min-w-0" aria-label="Product categories">
     <ul
-      class="flex min-w-max items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"
+      class="flex flex-wrap items-center gap-1.5 text-sm font-semibold text-slate-600 dark:text-slate-300 lg:flex-nowrap"
     >
       <li v-for="category in categories" :key="category.slug">
         <button
           type="button"
-          class="rounded-full border px-3 py-2 transition hover:-translate-y-0.5"
+          class="whitespace-nowrap rounded-lg border px-2.5 py-1.5 transition hover:-translate-y-0.5"
           :class="
             selectedSlug === category.slug
               ? 'border-cyan-300 bg-cyan-100 text-cyan-800 shadow-sm shadow-cyan-900/10 dark:border-cyan-400/40 dark:bg-cyan-400/15 dark:text-cyan-100'
