@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useWishlistStore } from "../stores/wishlistStore";
 
 import FilterPanel from "./FilterPanel.vue";
@@ -23,6 +23,8 @@ const defaultFilters = {
   maxPrice: 3000,
 };
 const filterParamKeys = ["q", "brand", "category", "min_price", "max_price"];
+const pageSize = 6;
+
 const products = ref([]);
 const facets = ref({
   brands: [],
@@ -31,21 +33,27 @@ const facets = ref({
 const activeFilters = ref(readFiltersFromUrl());
 const nextPageUrl = ref(null);
 const isLoading = ref(false);
-const isLoadingMore = ref(false);
 const errorMessage = ref("");
-const loadMoreMarker = ref(null);
+const currentPage = ref(1);
 const wishlistStore = useWishlistStore();
-let observer = null;
 let isApplyingUrlState = false;
 
 const hasProducts = computed(() => products.value.length > 0);
+const pageCount = computed(() => Math.max(1, Math.ceil(products.value.length / pageSize)));
+const visibleProducts = computed(() => {
+  const startIndex = (currentPage.value - 1) * pageSize;
+  return products.value.slice(startIndex, startIndex + pageSize).map((product) => ({
+    ...product,
+    is_wishlisted: wishlistStore.has(product.id),
+  }));
+});
 const pageTitle = computed(() => props.selectedCategory?.name || "Product Catalog");
 const pageSubtitle = computed(() => {
   if (props.selectedCategory?.name) {
     return `Browsing ${props.selectedCategory.name}`;
   }
 
-  return "Browse the latest tech products in the catalog.";
+  return "Browse current tech products without leaving this page.";
 });
 
 function productListUrl() {
@@ -58,15 +66,9 @@ function productListUrl() {
 function filtersToSearchParams(filters) {
   const params = new URLSearchParams();
 
-  if (filters.brand) {
-    params.set("brand", filters.brand);
-  }
-  if (filters.query) {
-    params.set("q", filters.query);
-  }
-  if (filters.category) {
-    params.set("category", filters.category);
-  }
+  if (filters.brand) params.set("brand", filters.brand);
+  if (filters.query) params.set("q", filters.query);
+  if (filters.category) params.set("category", filters.category);
   if (Number(filters.minPrice) > defaultFilters.minPrice) {
     params.set("min_price", filters.minPrice);
   }
@@ -78,15 +80,10 @@ function filtersToSearchParams(filters) {
 }
 
 function normalizePrice(value, fallback) {
-  if (value === null || value === "") {
-    return fallback;
-  }
+  if (value === null || value === "") return fallback;
 
   const numericValue = Number(value);
-
-  if (!Number.isFinite(numericValue)) {
-    return fallback;
-  }
+  if (!Number.isFinite(numericValue)) return fallback;
 
   return Math.min(Math.max(numericValue, 0), defaultFilters.maxPrice);
 }
@@ -110,31 +107,22 @@ function readFiltersFromUrl() {
 }
 
 function syncFiltersToUrl(filters, replace = false) {
-  if (typeof window === "undefined") {
-    return;
-  }
+  if (typeof window === "undefined") return;
 
   const params = new URLSearchParams(window.location.search);
   const filterParams = filtersToSearchParams(filters);
 
-  filterParamKeys.forEach((key) => {
-    params.delete(key);
-  });
-  filterParams.forEach((value, key) => {
-    params.set(key, value);
-  });
+  filterParamKeys.forEach((key) => params.delete(key));
+  filterParams.forEach((value, key) => params.set(key, value));
 
   const queryString = params.toString();
   const nextSearch = queryString ? `?${queryString}` : "";
   const nextUrl = `${window.location.pathname}${nextSearch}${window.location.hash}`;
   const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
-  if (nextUrl === currentUrl) {
-    return;
-  }
+  if (nextUrl === currentUrl) return;
 
-  const method = replace ? "replaceState" : "pushState";
-  window.history[method]({}, "", nextUrl);
+  window.history[replace ? "replaceState" : "pushState"]({}, "", nextUrl);
 }
 
 function applyFiltersFromUrl() {
@@ -147,25 +135,16 @@ function handleSearchChange() {
 }
 
 function resolveApiUrl(url) {
-  if (!url) {
-    return null;
-  }
-
-  if (url.startsWith("http")) {
-    return url;
-  }
-
+  if (!url) return null;
+  if (url.startsWith("http")) return url;
   return `${apiBaseUrl}${url}`;
 }
 
 async function fetchProducts(url, append = false) {
-  if (isLoading.value || isLoadingMore.value) {
-    return;
-  }
+  if (isLoading.value) return;
 
   errorMessage.value = "";
-  isLoading.value = !append;
-  isLoadingMore.value = append;
+  isLoading.value = true;
 
   try {
     const response = await fetch(resolveApiUrl(url));
@@ -180,53 +159,51 @@ async function fetchProducts(url, append = false) {
     products.value = append ? [...products.value, ...nextProducts] : nextProducts;
     facets.value = payload.facets || facets.value;
     nextPageUrl.value = payload.next;
-    await nextTick();
-    setupInfiniteScroll();
   } catch (error) {
     errorMessage.value = error.message || "Could not load products.";
   } finally {
     isLoading.value = false;
-    isLoadingMore.value = false;
   }
 }
 
-function loadFirstPage() {
-  products.value = [];
+async function loadFirstPage() {
+  currentPage.value = 1;
   nextPageUrl.value = null;
-  observer?.disconnect();
-  observer = null;
-  fetchProducts(productListUrl());
+  await fetchProducts(productListUrl());
 }
 
 function clearFilters() {
   activeFilters.value = { ...defaultFilters };
 }
 
-function loadNextPage() {
-  if (!nextPageUrl.value) {
+async function loadNextServerPage() {
+  if (!nextPageUrl.value) return false;
+  await fetchProducts(nextPageUrl.value, true);
+  return true;
+}
+
+async function goToPage(page) {
+  const requestedPage = Math.max(1, page);
+
+  while (requestedPage > pageCount.value && nextPageUrl.value) {
+    await loadNextServerPage();
+  }
+
+  currentPage.value = Math.min(requestedPage, pageCount.value);
+}
+
+async function goNext() {
+  if (currentPage.value < pageCount.value) {
+    currentPage.value += 1;
     return;
   }
 
-  fetchProducts(nextPageUrl.value, true);
-}
-
-function setupInfiniteScroll() {
-  if (!loadMoreMarker.value || observer) {
-    return;
+  if (nextPageUrl.value) {
+    const loaded = await loadNextServerPage();
+    if (loaded) currentPage.value += 1;
   }
-
-  observer = new IntersectionObserver(
-    ([entry]) => {
-      if (entry.isIntersecting && nextPageUrl.value) {
-        loadNextPage();
-      }
-    },
-    {
-      rootMargin: "320px 0px",
-    }
-  );
-  observer.observe(loadMoreMarker.value);
 }
+
 function handleWishlistToggle({ product }) {
   wishlistStore.toggle(product);
 }
@@ -239,7 +216,6 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  observer?.disconnect();
   window.removeEventListener("popstate", applyFiltersFromUrl);
   window.removeEventListener("catalog-search-change", handleSearchChange);
 });
@@ -247,9 +223,7 @@ onBeforeUnmount(() => {
 watch(
   () => props.selectedCategory?.slug,
   (nextSlug, previousSlug) => {
-    if (!nextSlug && previousSlug === undefined) {
-      return;
-    }
+    if (!nextSlug && previousSlug === undefined) return;
 
     activeFilters.value = {
       ...activeFilters.value,
@@ -275,91 +249,41 @@ watch(
 </script>
 
 <template>
-  <section
-    class="flex min-w-0 flex-1 flex-col bg-transparent text-slate-950 dark:text-slate-100 lg:flex-row"
-  >
+  <section class="flex min-h-0 min-w-0 flex-1 bg-white text-slate-950 dark:bg-slate-950 dark:text-slate-100">
     <FilterPanel v-model="activeFilters" :facets="facets" @clear="clearFilters" />
 
-    <div class="min-w-0 flex-1 px-5 py-5 sm:px-6">
-      <div
-        class="mb-5 overflow-hidden rounded-2xl border border-cyan-100 bg-slate-950 text-white shadow-xl shadow-cyan-950/15 dark:border-cyan-400/10"
-      >
-        <div
-          class="bg-[linear-gradient(135deg,rgba(34,211,238,0.22),rgba(139,92,246,0.18)_45%,rgba(16,185,129,0.22))] px-5 py-5 sm:px-6"
-        >
-          <div class="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p class="text-xs font-bold uppercase tracking-[0.22em] text-cyan-200">
-                Live tech marketplace
-              </p>
-              <h1 class="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
-                {{ pageTitle }}
-              </h1>
-              <p class="mt-2 max-w-2xl text-sm font-medium text-slate-300">
-                {{ pageSubtitle }}
-              </p>
-            </div>
+    <div class="flex min-h-0 min-w-0 flex-1 flex-col px-4 py-3">
+      <div class="mb-3 flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-2.5 dark:border-slate-800">
+        <div class="min-w-0">
+          <h1 class="truncate text-lg font-black tracking-tight text-slate-950 dark:text-white">
+            Catalog <span class="text-slate-400">|</span> {{ pageTitle }}
+          </h1>
+        </div>
 
-            <div
-              class="grid min-w-40 gap-1 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-right backdrop-blur"
-            >
-              <span class="text-3xl font-black text-cyan-200">{{ products.length }}</span>
-              <span class="text-xs font-bold uppercase tracking-wide text-slate-300"
-                >products loaded</span
-              >
-            </div>
-          </div>
-
-          <div class="mt-5 flex flex-wrap gap-2 text-xs font-semibold">
-            <span class="rounded-full bg-cyan-400/15 px-3 py-1.5 text-cyan-100"
-              >Fast catalog search</span
-            >
-            <span class="rounded-full bg-emerald-400/15 px-3 py-1.5 text-emerald-100"
-              >Vendor verified stock</span
-            >
-            <span class="rounded-full bg-amber-400/15 px-3 py-1.5 text-amber-100"
-              >Repair services included</span
-            >
-          </div>
+        <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-right text-sm font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
+          {{ products.length }} loaded
         </div>
       </div>
 
-      <div
-        class="flex flex-wrap items-center justify-between gap-4 border-b border-cyan-100 pb-4 dark:border-cyan-400/10"
-      >
-        <div>
-          <h2 class="text-base font-bold text-slate-950 dark:text-white">Featured hardware</h2>
-          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Compare devices, parts, and services from active vendors.
-          </p>
-        </div>
-
-        <div
-          class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-950/40 dark:text-emerald-200"
-        >
-          Updated inventory
-        </div>
-      </div>
-
-      <div class="py-5">
-        <div v-if="isLoading" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div class="min-h-0 flex-1 overflow-hidden">
+        <div v-if="isLoading" class="grid h-full grid-rows-3 gap-3 md:grid-cols-2">
           <div
-            v-for="item in 9"
+            v-for="item in 6"
             :key="item"
-            class="h-80 animate-pulse rounded-2xl border border-cyan-100 bg-cyan-50/70 dark:border-cyan-400/10 dark:bg-slate-900"
+            class="min-h-0 animate-pulse rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900"
           ></div>
         </div>
 
         <div
           v-else-if="errorMessage"
-          class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"
+          class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"
         >
           {{ errorMessage }}
         </div>
 
         <div
           v-else-if="!hasProducts"
-          class="rounded-2xl border border-cyan-100 bg-cyan-50/70 px-4 py-12 text-center dark:border-cyan-400/10 dark:bg-slate-900"
+          class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-12 text-center dark:border-slate-800 dark:bg-slate-900"
         >
           <p class="text-sm font-semibold text-slate-700 dark:text-slate-100">No products found.</p>
           <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -367,36 +291,102 @@ watch(
           </p>
         </div>
 
-        <template v-else>
-          <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            <ProductCard
-              v-for="product in products"
-              :key="product.id"
-              :product="product"
-              @view="emit('view-product', $event)"
-              @toggle-wishlist="handleWishlistToggle"
-            />
-          </div>
+        <TransitionGroup
+          v-else
+          appear
+          name="card-pop"
+          tag="div"
+          class="grid h-full min-h-0 grid-rows-3 gap-3 md:grid-cols-2"
+        >
+          <ProductCard
+            v-for="product in visibleProducts"
+            :key="product.id"
+            :product="product"
+            @view="emit('view-product', $event)"
+            @toggle-wishlist="handleWishlistToggle"
+          />
+        </TransitionGroup>
+      </div>
 
-          <div ref="loadMoreMarker" class="flex min-h-20 items-center justify-center py-6">
-            <div
-              v-if="isLoadingMore"
-              class="text-sm font-medium text-slate-500 dark:text-slate-400"
-            >
-              Loading more products...
-            </div>
-            <button
-              v-else-if="nextPageUrl"
-              type="button"
-              class="rounded-full border border-cyan-200 bg-white px-4 py-2 text-sm font-bold text-cyan-700 shadow-sm hover:bg-cyan-50 dark:border-cyan-400/20 dark:bg-slate-950 dark:text-cyan-200 dark:hover:bg-cyan-950/40"
-              @click="loadNextPage"
-            >
-              Load more
-            </button>
-            <p v-else class="text-sm text-slate-500 dark:text-slate-400">End of catalog</p>
-          </div>
-        </template>
+      <div
+        v-if="hasProducts"
+        class="mt-3 flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-3 dark:border-slate-800"
+      >
+        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
+          Page {{ currentPage }} of {{ pageCount }}{{ nextPageUrl ? "+" : "" }}
+        </p>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-900"
+            :disabled="currentPage === 1"
+            @click="goToPage(currentPage - 1)"
+          >
+            Previous
+          </button>
+          <button
+            v-for="page in pageCount"
+            :key="page"
+            type="button"
+            class="h-9 min-w-9 rounded-lg border px-3 text-xs font-bold transition"
+            :class="
+              page === currentPage
+                ? 'border-slate-950 bg-slate-950 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-950'
+                : 'border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-900'
+            "
+            @click="goToPage(page)"
+          >
+            {{ page }}
+          </button>
+          <button
+            type="button"
+            class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-900"
+            :disabled="currentPage === pageCount && !nextPageUrl"
+            @click="goNext"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   </section>
 </template>
+
+<style scoped>
+.card-pop-enter-active,
+.card-pop-leave-active {
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
+}
+
+.card-pop-enter-from,
+.card-pop-leave-to {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+.card-pop-move {
+  transition: transform 220ms ease;
+}
+
+.card-pop-enter-active:nth-child(2) {
+  transition-delay: 35ms;
+}
+
+.card-pop-enter-active:nth-child(3) {
+  transition-delay: 70ms;
+}
+
+.card-pop-enter-active:nth-child(4) {
+  transition-delay: 105ms;
+}
+
+.card-pop-enter-active:nth-child(5) {
+  transition-delay: 140ms;
+}
+
+.card-pop-enter-active:nth-child(6) {
+  transition-delay: 175ms;
+}
+</style>

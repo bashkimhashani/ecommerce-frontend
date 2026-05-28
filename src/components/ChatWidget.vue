@@ -60,11 +60,16 @@ function viewProduct(product) {
   isOpen.value = false;
   emit("view-product", product.slug);
 }
+
+function clearChat() {
+  chatStore.clearChat();
+  draft.value = "";
+}
 </script>
 
 <template>
   <div class="fixed bottom-6 right-6 z-50">
-    <Transition name="page-fade">
+    <Transition name="chat-panel">
       <section
         v-if="isOpen"
         class="mb-3 flex h-[32rem] w-[22rem] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-950"
@@ -88,23 +93,37 @@ function viewProduct(product) {
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            class="flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-950 dark:border-slate-700 dark:text-slate-400 dark:hover:border-slate-500 dark:hover:text-white"
-            aria-label="Close chat"
-            title="Close chat"
-            @click="isOpen = false"
-          >
-            x
-          </button>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="rounded border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-500 hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-400 dark:hover:border-slate-500 dark:hover:bg-slate-900 dark:hover:text-white"
+              :disabled="chatStore.messages.length === 0 || chatStore.isLoading"
+              aria-label="Clear AI chat"
+              title="Clear chat"
+              @click="clearChat"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              class="flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-950 dark:border-slate-700 dark:text-slate-400 dark:hover:border-slate-500 dark:hover:text-white"
+              aria-label="Close chat"
+              title="Close chat"
+              @click="isOpen = false"
+            >
+              x
+            </button>
+          </div>
         </header>
 
         <div
           ref="messageList"
           class="flex-1 space-y-4 overflow-y-auto bg-slate-50 px-4 py-4 dark:bg-slate-900"
         >
+          <TransitionGroup name="chat-pop" tag="div" class="space-y-4">
           <div
             v-if="chatStore.messages.length === 0"
+            key="empty"
             class="rounded border border-slate-200 bg-white p-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300"
           >
             Hi, I am Vendora Assistant. Ask me about products, comparisons, shopping, login, cart,
@@ -190,6 +209,7 @@ function viewProduct(product) {
               </div>
             </div>
           </div>
+          </TransitionGroup>
           <div v-if="chatStore.isLoading" class="text-xs text-slate-500 dark:text-slate-400">
             Thinking...
           </div>
@@ -220,12 +240,80 @@ function viewProduct(product) {
 
     <button
       type="button"
-      class="flex h-14 w-14 items-center justify-center rounded-full bg-slate-950 text-xl font-semibold text-white shadow-xl hover:bg-slate-800 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400"
+      class="chat-launcher flex h-14 w-14 items-center justify-center rounded-full bg-slate-950 text-white shadow-xl ring-1 ring-white/10 hover:bg-slate-800 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400"
       :aria-label="isOpen ? 'Close AI chat' : 'Open AI chat'"
       :title="isOpen ? 'Close AI chat' : 'Open AI chat'"
       @click="isOpen = !isOpen"
     >
-      ?
+      <svg
+        class="h-7 w-7"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M12 3v2" />
+        <path d="M7 8h10a4 4 0 0 1 4 4v3a4 4 0 0 1-4 4H8l-4 2v-9a4 4 0 0 1 4-4Z" />
+        <path d="M9 13h.01" />
+        <path d="M15 13h.01" />
+        <path d="M10 16h4" />
+      </svg>
     </button>
   </div>
 </template>
+
+<style scoped>
+.chat-panel-enter-active,
+.chat-panel-leave-active {
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+  transform-origin: bottom right;
+}
+
+.chat-panel-enter-from,
+.chat-panel-leave-to {
+  opacity: 0;
+  transform: translateY(10px) scale(0.96);
+}
+
+.chat-pop-enter-active,
+.chat-pop-leave-active {
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.chat-pop-enter-from,
+.chat-pop-leave-to {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+.chat-launcher {
+  animation: chat-launcher-slide 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease,
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chat-launcher:hover {
+  transform: translateY(-2px) scale(1.03);
+}
+
+@keyframes chat-launcher-slide {
+  from {
+    opacity: 0;
+    transform: translate(18px, 18px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+</style>

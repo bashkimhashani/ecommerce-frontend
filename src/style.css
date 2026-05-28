@@ -3,6 +3,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 html {
+  height: 100%;
+  overflow: hidden;
   transition:
     background-color 220ms ease,
     color 220ms ease;
@@ -10,7 +12,9 @@ html {
 }
 
 body {
+  height: 100%;
   min-width: 320px;
+  overflow: hidden;
   transition:
     background-color 220ms ease,
     color 220ms ease;
@@ -22,6 +26,11 @@ body {
     46px 46px,
     46px 46px,
     auto;
+}
+
+#app {
+  height: 100%;
+  overflow: hidden;
 }
 
 button,
@@ -63,4 +72,36 @@ main {
 ::selection {
   background: rgba(34, 211, 238, 0.32);
   color: #0f172a;
+}
+
+.filter-scrollbar {
+  scrollbar-color: #0891b2 #e2e8f0;
+  scrollbar-width: thin;
+}
+
+.filter-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.filter-scrollbar::-webkit-scrollbar-track {
+  background: #e2e8f0;
+}
+
+.filter-scrollbar::-webkit-scrollbar-thumb {
+  background: #0891b2;
+  border: 2px solid #e2e8f0;
+  border-radius: 999px;
+}
+
+.dark .filter-scrollbar {
+  scrollbar-color: #22d3ee #020617;
+}
+
+.dark .filter-scrollbar::-webkit-scrollbar-track {
+  background: #020617;
+}
+
+.dark .filter-scrollbar::-webkit-scrollbar-thumb {
+  background: #22d3ee;
+  border-color: #020617;
 }
