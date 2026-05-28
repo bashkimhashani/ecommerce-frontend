@@ -59,13 +59,13 @@ watch(
     @keydown.space.prevent="viewProduct"
   >
     <div
-      class="relative flex h-full min-h-0 items-center justify-center overflow-hidden bg-slate-50 p-2 dark:bg-slate-800"
+      class="relative flex h-full min-h-0 items-center justify-center overflow-hidden bg-slate-50 p-3 dark:bg-slate-800"
     >
       <img
         v-if="product.thumbnail"
         :src="product.thumbnail"
         :alt="product.name"
-        class="max-h-full max-w-full object-contain transition duration-300 group-hover:scale-[1.03]"
+        class="max-h-[88%] max-w-[92%] object-contain transition duration-300 group-hover:scale-[1.03]"
         loading="lazy"
       />
       <div

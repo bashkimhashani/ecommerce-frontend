@@ -184,18 +184,21 @@ onMounted(loadCart);
       </span>
     </button>
 
-    <div
-      v-if="isOpen"
-      class="fixed inset-0 z-40 bg-slate-950/65 backdrop-blur-sm"
-      aria-hidden="true"
-      @click="closeDrawer"
-    />
+    <Transition name="cart-overlay">
+      <div
+        v-if="isOpen"
+        class="fixed inset-0 z-40 bg-slate-950/65 backdrop-blur-sm"
+        aria-hidden="true"
+        @click="closeDrawer"
+      />
+    </Transition>
 
-    <aside
-      v-if="isOpen"
-      class="fixed right-0 top-0 z-50 flex h-full w-full max-w-md transform flex-col bg-white text-neutral-950 shadow-2xl shadow-cyan-950/20 transition-transform duration-200 dark:bg-slate-950 dark:text-slate-100"
-      aria-label="Shopping cart"
-    >
+    <Transition name="cart-drawer">
+      <aside
+        v-if="isOpen"
+        class="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-white text-neutral-950 shadow-2xl shadow-cyan-950/20 dark:bg-slate-950 dark:text-slate-100"
+        aria-label="Shopping cart"
+      >
       <header
         class="flex items-center justify-between border-b border-cyan-100 bg-cyan-50/70 px-5 py-4 dark:border-cyan-400/10 dark:bg-slate-900"
       >
@@ -249,7 +252,7 @@ onMounted(loadCart);
           </div>
         </div>
 
-        <ul v-else class="space-y-3">
+        <TransitionGroup v-else name="cart-item" tag="ul" appear class="space-y-3">
           <li
             v-for="item in cart.items"
             :key="item.id"
@@ -324,7 +327,7 @@ onMounted(loadCart);
               </p>
             </div>
           </li>
-        </ul>
+        </TransitionGroup>
       </div>
 
       <footer
@@ -345,6 +348,49 @@ onMounted(loadCart);
           Checkout
         </button>
       </footer>
-    </aside>
+      </aside>
+    </Transition>
   </div>
 </template>
+
+<style scoped>
+.cart-overlay-enter-active,
+.cart-overlay-leave-active {
+  transition: opacity 180ms ease;
+}
+
+.cart-overlay-enter-from,
+.cart-overlay-leave-to {
+  opacity: 0;
+}
+
+.cart-drawer-enter-active,
+.cart-drawer-leave-active {
+  transition:
+    opacity 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cart-drawer-enter-from,
+.cart-drawer-leave-to {
+  opacity: 0;
+  transform: translateX(28px);
+}
+
+.cart-item-enter-active,
+.cart-item-leave-active {
+  transition:
+    opacity 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cart-item-enter-from,
+.cart-item-leave-to {
+  opacity: 0;
+  transform: translateX(18px);
+}
+
+.cart-item-move {
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+</style>

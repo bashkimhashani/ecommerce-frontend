@@ -291,7 +291,13 @@ watch(
           </p>
         </div>
 
-        <div v-else class="grid h-full min-h-0 grid-rows-3 gap-3 md:grid-cols-2">
+        <TransitionGroup
+          v-else
+          appear
+          name="card-pop"
+          tag="div"
+          class="grid h-full min-h-0 grid-rows-3 gap-3 md:grid-cols-2"
+        >
           <ProductCard
             v-for="product in visibleProducts"
             :key="product.id"
@@ -299,7 +305,7 @@ watch(
             @view="emit('view-product', $event)"
             @toggle-wishlist="handleWishlistToggle"
           />
-        </div>
+        </TransitionGroup>
       </div>
 
       <div
@@ -345,3 +351,42 @@ watch(
     </div>
   </section>
 </template>
+
+<style scoped>
+.card-pop-enter-active,
+.card-pop-leave-active {
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
+}
+
+.card-pop-enter-from,
+.card-pop-leave-to {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+.card-pop-move {
+  transition: transform 220ms ease;
+}
+
+.card-pop-enter-active:nth-child(2) {
+  transition-delay: 35ms;
+}
+
+.card-pop-enter-active:nth-child(3) {
+  transition-delay: 70ms;
+}
+
+.card-pop-enter-active:nth-child(4) {
+  transition-delay: 105ms;
+}
+
+.card-pop-enter-active:nth-child(5) {
+  transition-delay: 140ms;
+}
+
+.card-pop-enter-active:nth-child(6) {
+  transition-delay: 175ms;
+}
+</style>

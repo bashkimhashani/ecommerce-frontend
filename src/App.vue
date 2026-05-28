@@ -226,16 +226,20 @@ onBeforeUnmount(() => {
         >
           <VendorDashboard v-if="activeView === 'vendor'" />
           <template v-else>
-            <ProductDetailPage
-              v-if="selectedProductSlug"
-              :slug="selectedProductSlug"
-              @back="showCatalog"
-            />
-            <ProductListingPage
-              v-else
-              :selected-category="selectedCategory"
-              @view-product="showProduct"
-            />
+            <Transition name="product-modal" mode="out-in" appear>
+              <ProductDetailPage
+                v-if="selectedProductSlug"
+                :key="`product-${selectedProductSlug}`"
+                :slug="selectedProductSlug"
+                @back="showCatalog"
+              />
+              <ProductListingPage
+                v-else
+                key="catalog-listing"
+                :selected-category="selectedCategory"
+                @view-product="showProduct"
+              />
+            </Transition>
           </template>
         </main>
       </div>
@@ -266,5 +270,19 @@ onBeforeUnmount(() => {
 .page-fade-enter-from,
 .page-fade-leave-to {
   opacity: 0;
+}
+
+.product-modal-enter-active,
+.product-modal-leave-active {
+  transition:
+    opacity 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: center;
+}
+
+.product-modal-enter-from,
+.product-modal-leave-to {
+  opacity: 0;
+  transform: scale(0.96);
 }
 </style>
