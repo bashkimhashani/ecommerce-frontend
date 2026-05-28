@@ -60,6 +60,22 @@ function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function clearStoredAuthTokens() {
+  ["accessToken", "access", "refreshToken", "refresh"].forEach((key) => {
+    localStorage.removeItem(key);
+  });
+}
+
+function isInvalidTokenResponse(response, data) {
+  return (
+    response.status === 401 &&
+    (data.code === "token_not_valid" ||
+      String(data.detail || "")
+        .toLowerCase()
+        .includes("token not valid"))
+  );
+}
+
 function selectDefaultVariant() {
   const inStockVariant = variants.value.find((variant) => Number(variant.stock_quantity || 0) > 0);
   selectedVariantId.value = inStockVariant?.id || variants.value[0]?.id || null;
@@ -67,6 +83,24 @@ function selectDefaultVariant() {
 
 function getErrorMessage(data) {
   return data.detail || data.quantity?.[0] || data.product_variant_id?.[0] || "Could not add item.";
+}
+
+async function postCartItem(includeAuth = true) {
+  const response = await fetch(`${apiBaseUrl}/api/v1/cart/items/`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(includeAuth ? authHeaders() : {}),
+    },
+    body: JSON.stringify({
+      product_variant_id: selectedVariant.value.id,
+      quantity: 1,
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+
+  return { data, response };
 }
 
 async function loadProduct() {
@@ -112,19 +146,12 @@ async function addToCart() {
   isAddingToCart.value = true;
 
   try {
-    const response = await fetch(`${apiBaseUrl}/api/v1/cart/items/`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        ...authHeaders(),
-      },
-      body: JSON.stringify({
-        product_variant_id: selectedVariant.value.id,
-        quantity: 1,
-      }),
-    });
-    const data = await response.json().catch(() => ({}));
+    let { data, response } = await postCartItem();
+
+    if (isInvalidTokenResponse(response, data)) {
+      clearStoredAuthTokens();
+      ({ data, response } = await postCartItem(false));
+    }
 
     if (!response.ok) {
       throw new Error(getErrorMessage(data));
