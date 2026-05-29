@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 const emit = defineEmits(["checkout"]);
 
@@ -23,15 +23,32 @@ function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-async function requestCart(path, options = {}) {
+function clearStoredAuthTokens() {
+  ["accessToken", "access", "refreshToken", "refresh"].forEach((key) => {
+    localStorage.removeItem(key);
+  });
+}
+
+function isInvalidTokenResponse(response, data) {
+  return (
+    response.status === 401 &&
+    (data.code === "token_not_valid" ||
+      String(data.detail || "")
+        .toLowerCase()
+        .includes("token not valid"))
+  );
+}
+
+async function requestCart(path, options = {}, includeAuth = true) {
+  const { headers: optionHeaders, ...requestOptions } = options;
   const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...requestOptions,
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...authHeaders(),
-      ...(options.headers || {}),
+      ...(includeAuth ? authHeaders() : {}),
+      ...(optionHeaders || {}),
     },
-    ...options,
   });
 
   if (response.status === 204) {
@@ -39,6 +56,11 @@ async function requestCart(path, options = {}) {
   }
 
   const data = await response.json().catch(() => ({}));
+
+  if (isInvalidTokenResponse(response, data) && includeAuth) {
+    clearStoredAuthTokens();
+    return requestCart(path, options, false);
+  }
 
   if (!response.ok) {
     const detail = data.detail || data.quantity?.[0] || "Cart request failed.";
@@ -148,7 +170,18 @@ function isPending(item) {
   return pendingItemIds.value.has(item.id);
 }
 
-onMounted(loadCart);
+function handleCartItemAdded() {
+  loadCart();
+}
+
+onMounted(() => {
+  loadCart();
+  window.addEventListener("cart:item-added", handleCartItemAdded);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("cart:item-added", handleCartItemAdded);
+});
 </script>
 
 <template>

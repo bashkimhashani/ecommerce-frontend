@@ -15,8 +15,11 @@ const product = ref(null);
 const selectedImageIndex = ref(0);
 const activeTab = ref("specs");
 const isLoading = ref(false);
+const isAddingToCart = ref(false);
 const errorMessage = ref("");
 const addToCartStatus = ref("");
+const addToCartError = ref("");
+const selectedVariantId = ref(null);
 
 const galleryImages = computed(() => {
   return (product.value?.images || [])
@@ -44,14 +47,68 @@ const formattedPrice = computed(() => {
 
 const specs = computed(() => Object.entries(product.value?.specs || {}));
 const variants = computed(() => product.value?.variants || []);
+const selectedVariant = computed(() => {
+  return variants.value.find((variant) => variant.id === selectedVariantId.value) || null;
+});
 const totalStock = computed(() => {
   return variants.value.reduce((total, variant) => total + Number(variant.stock_quantity || 0), 0);
 });
+const selectedVariantStock = computed(() => Number(selectedVariant.value?.stock_quantity || 0));
+
+function authHeaders() {
+  const token = localStorage.getItem("accessToken") || localStorage.getItem("access");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function clearStoredAuthTokens() {
+  ["accessToken", "access", "refreshToken", "refresh"].forEach((key) => {
+    localStorage.removeItem(key);
+  });
+}
+
+function isInvalidTokenResponse(response, data) {
+  return (
+    response.status === 401 &&
+    (data.code === "token_not_valid" ||
+      String(data.detail || "")
+        .toLowerCase()
+        .includes("token not valid"))
+  );
+}
+
+function selectDefaultVariant() {
+  const inStockVariant = variants.value.find((variant) => Number(variant.stock_quantity || 0) > 0);
+  selectedVariantId.value = inStockVariant?.id || variants.value[0]?.id || null;
+}
+
+function getErrorMessage(data) {
+  return data.detail || data.quantity?.[0] || data.product_variant_id?.[0] || "Could not add item.";
+}
+
+async function postCartItem(includeAuth = true) {
+  const response = await fetch(`${apiBaseUrl}/api/v1/cart/items/`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(includeAuth ? authHeaders() : {}),
+    },
+    body: JSON.stringify({
+      product_variant_id: selectedVariant.value.id,
+      quantity: 1,
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+
+  return { data, response };
+}
 
 async function loadProduct() {
   isLoading.value = true;
   errorMessage.value = "";
   addToCartStatus.value = "";
+  addToCartError.value = "";
+  selectedVariantId.value = null;
   selectedImageIndex.value = 0;
   activeTab.value = "specs";
 
@@ -63,6 +120,7 @@ async function loadProduct() {
     }
 
     product.value = await response.json();
+    selectDefaultVariant();
   } catch (error) {
     product.value = null;
     errorMessage.value = error.message || "Could not load product.";
@@ -71,8 +129,41 @@ async function loadProduct() {
   }
 }
 
-function addToCart() {
-  addToCartStatus.value = "Added to cart";
+async function addToCart() {
+  addToCartStatus.value = "";
+  addToCartError.value = "";
+
+  if (!selectedVariant.value) {
+    addToCartError.value = "Choose an available variant first.";
+    return;
+  }
+
+  if (selectedVariantStock.value < 1) {
+    addToCartError.value = "This variant is out of stock.";
+    return;
+  }
+
+  isAddingToCart.value = true;
+
+  try {
+    let { data, response } = await postCartItem();
+
+    if (isInvalidTokenResponse(response, data)) {
+      clearStoredAuthTokens();
+      ({ data, response } = await postCartItem(false));
+    }
+
+    if (!response.ok) {
+      throw new Error(getErrorMessage(data));
+    }
+
+    addToCartStatus.value = "Added to cart";
+    window.dispatchEvent(new CustomEvent("cart:item-added", { detail: data }));
+  } catch (error) {
+    addToCartError.value = error.message || "Could not add item.";
+  } finally {
+    isAddingToCart.value = false;
+  }
 }
 
 onMounted(loadProduct);
@@ -202,11 +293,22 @@ watch(() => props.slug, loadProduct);
               v-else-if="variants.length"
               class="divide-y divide-slate-200 dark:divide-slate-700"
             >
-              <div
+              <label
                 v-for="variant in variants"
                 :key="variant.id"
-                class="grid gap-3 py-3 text-sm sm:grid-cols-4"
+                class="grid cursor-pointer gap-3 py-3 text-sm sm:grid-cols-[32px_repeat(4,minmax(0,1fr))]"
+                :class="Number(variant.stock_quantity || 0) < 1 ? 'opacity-60' : ''"
               >
+                <span class="flex items-center">
+                  <input
+                    v-model="selectedVariantId"
+                    type="radio"
+                    name="product-variant"
+                    class="h-4 w-4 border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                    :value="variant.id"
+                    :disabled="Number(variant.stock_quantity || 0) < 1"
+                  />
+                </span>
                 <span class="font-medium text-slate-950 dark:text-slate-100">{{
                   variant.color || "Standard"
                 }}</span>
@@ -219,7 +321,10 @@ watch(() => props.slug, loadProduct);
                 <span class="font-medium text-slate-950 dark:text-slate-100"
                   >{{ variant.stock_quantity }} in stock</span
                 >
-              </div>
+                <span class="font-medium text-emerald-600 dark:text-emerald-300"
+                  >${{ Number(variant.variant_price || product.price).toFixed(2) }}</span
+                >
+              </label>
             </div>
 
             <p v-else class="text-sm text-slate-500 dark:text-slate-400">No variants available.</p>
@@ -240,6 +345,19 @@ watch(() => props.slug, loadProduct);
           {{ product.category?.name || "Product" }} / {{ product.sku }}
         </p>
 
+        <div
+          v-if="selectedVariant"
+          class="mt-4 rounded-xl border border-cyan-100 bg-cyan-50/70 px-3 py-2 text-sm dark:border-cyan-400/10 dark:bg-slate-800"
+        >
+          <p class="font-bold text-slate-950 dark:text-slate-100">
+            {{ selectedVariant.color || "Standard" }}
+          </p>
+          <p class="mt-1 text-slate-600 dark:text-slate-300">
+            {{ selectedVariant.storage || "Storage n/a" }} /
+            {{ selectedVariant.ram || "RAM n/a" }}
+          </p>
+        </div>
+
         <div class="mt-5 flex items-end justify-between gap-4">
           <p class="text-3xl font-black text-emerald-600 dark:text-emerald-300">
             {{ formattedPrice }}
@@ -253,10 +371,11 @@ watch(() => props.slug, loadProduct);
 
         <button
           type="button"
-          class="mt-5 w-full rounded-xl bg-cyan-500 px-4 py-3 text-sm font-black text-white shadow-lg shadow-cyan-900/20 hover:bg-cyan-600 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300"
+          class="mt-5 w-full rounded-xl bg-cyan-500 px-4 py-3 text-sm font-black text-white shadow-lg shadow-cyan-900/20 hover:bg-cyan-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+          :disabled="isAddingToCart || !selectedVariant || selectedVariantStock < 1"
           @click="addToCart"
         >
-          Add to cart
+          {{ isAddingToCart ? "Adding..." : "Add to cart" }}
         </button>
 
         <p
@@ -264,6 +383,12 @@ watch(() => props.slug, loadProduct);
           class="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200"
         >
           {{ addToCartStatus }}
+        </p>
+        <p
+          v-if="addToCartError"
+          class="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-700 dark:bg-red-950/60 dark:text-red-200"
+        >
+          {{ addToCartError }}
         </p>
       </aside>
     </div>
