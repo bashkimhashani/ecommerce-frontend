@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from "vue";
+import { useAuthStore } from "../stores/authStore";
 
 const props = defineProps({
   slug: {
@@ -9,6 +10,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["back"]);
+const authStore = useAuthStore();
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const product = ref(null);
@@ -113,7 +115,11 @@ async function loadProduct() {
   activeTab.value = "specs";
 
   try {
-    const response = await fetch(`${apiBaseUrl}/api/v1/catalog/products/${props.slug}/`);
+    const mineParam =
+      authStore.role === "vendor_admin" || authStore.role === "store_staff" ? "?mine=1" : "";
+    const response = await authStore.authenticatedFetch(
+      `${apiBaseUrl}/api/v1/catalog/products/${props.slug}/${mineParam}`
+    );
 
     if (!response.ok) {
       throw new Error("Could not load product.");
@@ -173,224 +179,216 @@ watch(() => props.slug, loadProduct);
 
 <template>
   <section
-    class="min-w-0 flex-1 bg-transparent px-5 py-5 text-slate-950 dark:text-slate-100 sm:px-6"
+    class="flex min-h-0 min-w-0 flex-1 justify-center bg-transparent p-3 text-slate-950 dark:text-slate-100 sm:p-4"
   >
-    <button
-      type="button"
-      class="mb-4 rounded-full border border-cyan-200 bg-white px-3 py-2 text-sm font-bold text-cyan-700 shadow-sm hover:bg-cyan-50 dark:border-cyan-400/20 dark:bg-slate-900 dark:text-cyan-200 dark:hover:bg-cyan-950/40"
-      @click="emit('back')"
-    >
-      Back to products
-    </button>
-
-    <div v-if="isLoading" class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <div class="h-[520px] animate-pulse rounded-2xl bg-cyan-50 dark:bg-slate-900"></div>
-      <div class="space-y-4">
-        <div class="h-8 animate-pulse rounded-2xl bg-cyan-50 dark:bg-slate-900"></div>
-        <div class="h-24 animate-pulse rounded-2xl bg-cyan-50 dark:bg-slate-900"></div>
-        <div class="h-12 animate-pulse rounded-2xl bg-cyan-50 dark:bg-slate-900"></div>
-      </div>
-    </div>
-
     <div
-      v-else-if="errorMessage"
-      class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"
+      class="relative flex min-h-0 w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-cyan-950/10 dark:border-slate-800 dark:bg-slate-950 dark:shadow-black/40"
     >
-      {{ errorMessage }}
-    </div>
+      <button
+        type="button"
+        class="absolute left-3 top-3 z-20 inline-flex h-9 items-center rounded-full border border-white/70 bg-white/90 px-3 text-sm font-black text-slate-700 shadow-lg shadow-slate-950/10 backdrop-blur hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-950/90 dark:text-cyan-100 dark:hover:bg-slate-900"
+        @click="emit('back')"
+      >
+        Back
+      </button>
 
-    <div v-else-if="product" class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <div class="min-w-0">
-        <div
-          class="overflow-hidden rounded-2xl border border-cyan-100 bg-gradient-to-br from-cyan-50 via-slate-100 to-emerald-50 shadow-xl shadow-cyan-950/10 dark:border-cyan-400/10 dark:from-slate-900 dark:via-slate-950 dark:to-cyan-950"
-        >
-          <img
-            v-if="selectedImage"
-            :src="selectedImage.src"
-            :alt="selectedImage.alt_text || product.name"
-            class="aspect-[4/3] w-full object-cover"
-          />
-          <div
-            v-else
-            class="flex aspect-[4/3] items-center justify-center px-6 text-center text-sm font-bold text-slate-400 dark:text-slate-300"
-          >
-            {{ product.name }}
-          </div>
+      <div v-if="isLoading" class="grid min-h-0 flex-1 gap-4 p-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+        <div class="min-h-[420px] animate-pulse rounded-2xl bg-cyan-50 dark:bg-slate-900"></div>
+        <div class="space-y-4 pt-12 lg:pt-0">
+          <div class="h-8 animate-pulse rounded-2xl bg-cyan-50 dark:bg-slate-900"></div>
+          <div class="h-40 animate-pulse rounded-2xl bg-cyan-50 dark:bg-slate-900"></div>
+          <div class="h-12 animate-pulse rounded-2xl bg-cyan-50 dark:bg-slate-900"></div>
         </div>
+      </div>
 
-        <div v-if="galleryImages.length > 1" class="mt-3 grid grid-cols-4 gap-3 sm:grid-cols-6">
-          <button
-            v-for="(image, index) in galleryImages"
-            :key="image.id"
-            type="button"
-            class="overflow-hidden rounded-xl border bg-slate-100 dark:bg-slate-900"
-            :class="
-              index === selectedImageIndex
-                ? 'border-cyan-500 ring-2 ring-cyan-400 dark:border-cyan-300 dark:ring-cyan-300'
-                : 'border-slate-200 hover:border-cyan-300 dark:border-slate-700 dark:hover:border-cyan-400/40'
-            "
-            @click="selectedImageIndex = index"
+      <div
+        v-else-if="errorMessage"
+        class="m-4 mt-14 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"
+      >
+        {{ errorMessage }}
+      </div>
+
+      <div
+        v-else-if="product"
+        class="grid min-h-0 flex-1 gap-4 overflow-y-auto p-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)] lg:overflow-hidden"
+      >
+        <div class="flex min-h-0 flex-col gap-3 pt-10 lg:pt-0">
+          <div
+            class="flex min-h-[360px] flex-1 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900"
           >
             <img
-              :src="image.thumbnail || image.src"
-              :alt="image.alt_text || product.name"
-              class="aspect-square w-full object-cover"
+              v-if="selectedImage"
+              :src="selectedImage.src"
+              :alt="selectedImage.alt_text || product.name"
+              class="max-h-[56vh] max-w-full object-contain"
             />
-          </button>
-        </div>
-
-        <div
-          class="mt-6 rounded-2xl border border-cyan-100 bg-white shadow-lg shadow-cyan-950/5 dark:border-cyan-400/10 dark:bg-slate-900"
-        >
-          <div class="flex border-b border-cyan-100 dark:border-cyan-400/10">
-            <button
-              type="button"
-              class="px-4 py-3 text-sm font-semibold"
-              :class="
-                activeTab === 'specs'
-                  ? 'border-b-2 border-cyan-500 text-cyan-700 dark:border-cyan-300 dark:text-cyan-100'
-                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'
-              "
-              @click="activeTab = 'specs'"
+            <div
+              v-else
+              class="flex min-h-[360px] items-center justify-center px-6 text-center text-sm font-bold text-slate-400 dark:text-slate-300"
             >
-              Specs
-            </button>
-            <button
-              type="button"
-              class="px-4 py-3 text-sm font-semibold"
-              :class="
-                activeTab === 'variants'
-                  ? 'border-b-2 border-cyan-500 text-cyan-700 dark:border-cyan-300 dark:text-cyan-100'
-                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'
-              "
-              @click="activeTab = 'variants'"
-            >
-              Variants
-            </button>
+              {{ product.name }}
+            </div>
           </div>
 
-          <div class="p-4">
-            <dl v-if="activeTab === 'specs' && specs.length" class="grid gap-3 sm:grid-cols-2">
-              <div
-                v-for="[label, value] in specs"
-                :key="label"
-                class="rounded-xl border border-cyan-100 bg-cyan-50/70 px-3 py-2 dark:border-cyan-400/10 dark:bg-slate-800"
-              >
-                <dt class="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
-                  {{ label }}
-                </dt>
-                <dd class="mt-1 text-sm text-slate-900 dark:text-slate-100">
-                  {{ value }}
-                </dd>
-              </div>
-            </dl>
-
-            <p v-else-if="activeTab === 'specs'" class="text-sm text-slate-500 dark:text-slate-400">
-              No specs available.
-            </p>
-
-            <div
-              v-else-if="variants.length"
-              class="divide-y divide-slate-200 dark:divide-slate-700"
+          <div v-if="galleryImages.length > 1" class="grid shrink-0 grid-cols-5 gap-2 sm:grid-cols-6">
+            <button
+              v-for="(image, index) in galleryImages"
+              :key="image.id"
+              type="button"
+              class="overflow-hidden rounded-xl border bg-slate-100 p-1 dark:bg-slate-900"
+              :class="
+                index === selectedImageIndex
+                  ? 'border-cyan-500 ring-2 ring-cyan-400 dark:border-cyan-300 dark:ring-cyan-300'
+                  : 'border-slate-200 hover:border-cyan-300 dark:border-slate-700 dark:hover:border-cyan-400/40'
+              "
+              @click="selectedImageIndex = index"
             >
-              <label
-                v-for="variant in variants"
-                :key="variant.id"
-                class="grid cursor-pointer gap-3 py-3 text-sm sm:grid-cols-[32px_repeat(4,minmax(0,1fr))]"
-                :class="Number(variant.stock_quantity || 0) < 1 ? 'opacity-60' : ''"
+              <img
+                :src="image.thumbnail || image.src"
+                :alt="image.alt_text || product.name"
+                class="aspect-square w-full object-contain"
+              />
+            </button>
+          </div>
+        </div>
+
+        <aside
+          class="min-h-0 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-xl shadow-cyan-950/5 dark:border-slate-800 dark:bg-slate-900"
+        >
+          <p class="inline-flex rounded-full bg-cyan-50 px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-200">
+            {{ product.brand?.name || "Brand" }}
+          </p>
+          <h1 class="mt-3 text-2xl font-black leading-tight text-slate-950 dark:text-white">
+            {{ product.name }}
+          </h1>
+          <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            {{ product.category?.name || "Product" }} / {{ product.sku }}
+          </p>
+
+          <div class="mt-5 flex items-end justify-between gap-4">
+            <p class="text-3xl font-black text-emerald-600 dark:text-emerald-300">
+              {{ formattedPrice }}
+            </p>
+            <p
+              class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200"
+            >
+              {{ totalStock }} in stock
+            </p>
+          </div>
+
+          <div
+            v-if="selectedVariant"
+            class="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
+          >
+            <p class="font-bold text-slate-950 dark:text-slate-100">
+              {{ selectedVariant.color || "Standard" }}
+            </p>
+            <p class="mt-1 text-slate-600 dark:text-slate-300">
+              {{ selectedVariant.storage || "Storage n/a" }} /
+              {{ selectedVariant.ram || "RAM n/a" }}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="mt-5 w-full rounded-xl bg-cyan-500 px-4 py-3 text-sm font-black text-white shadow-lg shadow-cyan-900/20 hover:bg-cyan-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+            :disabled="isAddingToCart || !selectedVariant || selectedVariantStock < 1"
+            @click="addToCart"
+          >
+            {{ isAddingToCart ? "Adding..." : "Add to cart" }}
+          </button>
+
+          <p
+            v-if="addToCartStatus"
+            class="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200"
+          >
+            {{ addToCartStatus }}
+          </p>
+          <p
+            v-if="addToCartError"
+            class="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-700 dark:bg-red-950/60 dark:text-red-200"
+          >
+            {{ addToCartError }}
+          </p>
+
+          <div class="mt-5 rounded-xl border border-slate-200 dark:border-slate-800">
+            <div class="flex border-b border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                class="px-4 py-3 text-sm font-semibold"
+                :class="
+                  activeTab === 'specs'
+                    ? 'border-b-2 border-cyan-500 text-cyan-700 dark:border-cyan-300 dark:text-cyan-100'
+                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'
+                "
+                @click="activeTab = 'specs'"
               >
-                <span class="flex items-center">
+                Specs
+              </button>
+              <button
+                type="button"
+                class="px-4 py-3 text-sm font-semibold"
+                :class="
+                  activeTab === 'variants'
+                    ? 'border-b-2 border-cyan-500 text-cyan-700 dark:border-cyan-300 dark:text-cyan-100'
+                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'
+                "
+                @click="activeTab = 'variants'"
+              >
+                Variants
+              </button>
+            </div>
+
+            <div class="p-4">
+              <dl v-if="activeTab === 'specs' && specs.length" class="grid gap-3">
+                <div
+                  v-for="[label, value] in specs"
+                  :key="label"
+                  class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-950"
+                >
+                  <dt class="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                    {{ label }}
+                  </dt>
+                  <dd class="mt-1 text-sm text-slate-900 dark:text-slate-100">
+                    {{ value }}
+                  </dd>
+                </div>
+              </dl>
+              <p v-else-if="activeTab === 'specs'" class="text-sm text-slate-500 dark:text-slate-400">
+                No specs available.
+              </p>
+
+              <div v-else-if="variants.length" class="divide-y divide-slate-200 dark:divide-slate-700">
+                <label
+                  v-for="variant in variants"
+                  :key="variant.id"
+                  class="grid cursor-pointer grid-cols-[24px_minmax(0,1fr)] gap-2 py-3 text-sm"
+                  :class="Number(variant.stock_quantity || 0) < 1 ? 'opacity-60' : ''"
+                >
                   <input
                     v-model="selectedVariantId"
                     type="radio"
                     name="product-variant"
-                    class="h-4 w-4 border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                    class="mt-1 h-4 w-4 border-slate-300 text-cyan-600 focus:ring-cyan-500"
                     :value="variant.id"
                     :disabled="Number(variant.stock_quantity || 0) < 1"
                   />
-                </span>
-                <span class="font-medium text-slate-950 dark:text-slate-100">{{
-                  variant.color || "Standard"
-                }}</span>
-                <span class="text-slate-600 dark:text-slate-300">{{
-                  variant.storage || "Storage n/a"
-                }}</span>
-                <span class="text-slate-600 dark:text-slate-300">{{
-                  variant.ram || "RAM n/a"
-                }}</span>
-                <span class="font-medium text-slate-950 dark:text-slate-100"
-                  >{{ variant.stock_quantity }} in stock</span
-                >
-                <span class="font-medium text-emerald-600 dark:text-emerald-300"
-                  >${{ Number(variant.variant_price || product.price).toFixed(2) }}</span
-                >
-              </label>
+                  <span>
+                    <span class="block font-bold text-slate-950 dark:text-slate-100">
+                      {{ variant.color || "Standard" }}
+                    </span>
+                    <span class="mt-1 block text-slate-600 dark:text-slate-300">
+                      {{ variant.storage || "Storage n/a" }} / {{ variant.ram || "RAM n/a" }} /
+                      {{ variant.stock_quantity }} in stock
+                    </span>
+                  </span>
+                </label>
+              </div>
+              <p v-else class="text-sm text-slate-500 dark:text-slate-400">No variants available.</p>
             </div>
-
-            <p v-else class="text-sm text-slate-500 dark:text-slate-400">No variants available.</p>
           </div>
-        </div>
+        </aside>
       </div>
-
-      <aside
-        class="h-fit rounded-2xl border border-cyan-100 bg-white p-5 shadow-xl shadow-cyan-950/10 dark:border-cyan-400/10 dark:bg-slate-900"
-      >
-        <p class="text-xs font-black uppercase tracking-[0.18em] text-cyan-600 dark:text-cyan-300">
-          {{ product.brand?.name || "Brand" }}
-        </p>
-        <h1 class="mt-2 text-2xl font-black leading-tight text-slate-950 dark:text-white">
-          {{ product.name }}
-        </h1>
-        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          {{ product.category?.name || "Product" }} / {{ product.sku }}
-        </p>
-
-        <div
-          v-if="selectedVariant"
-          class="mt-4 rounded-xl border border-cyan-100 bg-cyan-50/70 px-3 py-2 text-sm dark:border-cyan-400/10 dark:bg-slate-800"
-        >
-          <p class="font-bold text-slate-950 dark:text-slate-100">
-            {{ selectedVariant.color || "Standard" }}
-          </p>
-          <p class="mt-1 text-slate-600 dark:text-slate-300">
-            {{ selectedVariant.storage || "Storage n/a" }} /
-            {{ selectedVariant.ram || "RAM n/a" }}
-          </p>
-        </div>
-
-        <div class="mt-5 flex items-end justify-between gap-4">
-          <p class="text-3xl font-black text-emerald-600 dark:text-emerald-300">
-            {{ formattedPrice }}
-          </p>
-          <p
-            class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200"
-          >
-            {{ totalStock }} in stock
-          </p>
-        </div>
-
-        <button
-          type="button"
-          class="mt-5 w-full rounded-xl bg-cyan-500 px-4 py-3 text-sm font-black text-white shadow-lg shadow-cyan-900/20 hover:bg-cyan-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
-          :disabled="isAddingToCart || !selectedVariant || selectedVariantStock < 1"
-          @click="addToCart"
-        >
-          {{ isAddingToCart ? "Adding..." : "Add to cart" }}
-        </button>
-
-        <p
-          v-if="addToCartStatus"
-          class="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200"
-        >
-          {{ addToCartStatus }}
-        </p>
-        <p
-          v-if="addToCartError"
-          class="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-700 dark:bg-red-950/60 dark:text-red-200"
-        >
-          {{ addToCartError }}
-        </p>
-      </aside>
     </div>
   </section>
 </template>

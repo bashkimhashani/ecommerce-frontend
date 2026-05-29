@@ -1,26 +1,30 @@
 import { defineStore } from "pinia";
 
-const STORAGE_KEY = "wishlistItems";
+const STORAGE_KEY_PREFIX = "wishlistItems";
 
-function readWishlistItems() {
+function storageKey(ownerKey = "guest") {
+  return `${STORAGE_KEY_PREFIX}:${ownerKey || "guest"}`;
+}
+
+function readWishlistItems(ownerKey = "guest") {
   if (typeof localStorage === "undefined") {
     return [];
   }
 
   try {
-    const items = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const items = JSON.parse(localStorage.getItem(storageKey(ownerKey)));
     return Array.isArray(items) ? items : [];
   } catch {
     return [];
   }
 }
 
-function writeWishlistItems(items) {
+function writeWishlistItems(items, ownerKey = "guest") {
   if (typeof localStorage === "undefined") {
     return;
   }
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  localStorage.setItem(storageKey(ownerKey), JSON.stringify(items));
 }
 
 function normalizeProduct(product) {
@@ -37,7 +41,8 @@ function normalizeProduct(product) {
 
 export const useWishlistStore = defineStore("wishlist", {
   state: () => ({
-    items: readWishlistItems(),
+    ownerKey: "guest",
+    items: readWishlistItems("guest"),
   }),
   getters: {
     count: (state) => state.items.length,
@@ -52,11 +57,11 @@ export const useWishlistStore = defineStore("wishlist", {
       }
 
       this.items = [normalizeProduct(product), ...this.items];
-      writeWishlistItems(this.items);
+      writeWishlistItems(this.items, this.ownerKey);
     },
     remove(productId) {
       this.items = this.items.filter((item) => item.id !== productId);
-      writeWishlistItems(this.items);
+      writeWishlistItems(this.items, this.ownerKey);
     },
     toggle(product) {
       if (this.has(product.id)) {
@@ -69,7 +74,16 @@ export const useWishlistStore = defineStore("wishlist", {
     },
     clear() {
       this.items = [];
-      writeWishlistItems(this.items);
+      writeWishlistItems(this.items, this.ownerKey);
+    },
+    syncForUser(user) {
+      const nextOwnerKey = user?.id ? `user:${user.id}` : user?.email ? `user:${user.email}` : "guest";
+      if (nextOwnerKey === this.ownerKey) {
+        return;
+      }
+
+      this.ownerKey = nextOwnerKey;
+      this.items = readWishlistItems(this.ownerKey);
     },
   },
 });

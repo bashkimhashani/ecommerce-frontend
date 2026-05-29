@@ -1,6 +1,8 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import { useWishlistStore } from "../stores/wishlistStore";
+import { useAuthStore } from "../stores/authStore";
 
 import FilterPanel from "./FilterPanel.vue";
 import ProductCard from "./ProductCard.vue";
@@ -22,7 +24,7 @@ const defaultFilters = {
   minPrice: 0,
   maxPrice: 3000,
 };
-const filterParamKeys = ["q", "brand", "category", "min_price", "max_price"];
+const filterParamKeys = ["q", "brand", "category", "min_price", "max_price", "mine"];
 const pageSize = 6;
 
 const products = ref([]);
@@ -36,9 +38,14 @@ const isLoading = ref(false);
 const errorMessage = ref("");
 const currentPage = ref(1);
 const wishlistStore = useWishlistStore();
+const authStore = useAuthStore();
+const router = useRouter();
 let isApplyingUrlState = false;
 
 const hasProducts = computed(() => products.value.length > 0);
+const isVendorCatalog = computed(
+  () => authStore.role === "vendor_admin" || authStore.role === "store_staff"
+);
 const pageCount = computed(() => Math.max(1, Math.ceil(products.value.length / pageSize)));
 const visibleProducts = computed(() => {
   const startIndex = (currentPage.value - 1) * pageSize;
@@ -62,6 +69,7 @@ function filtersToSearchParams(filters) {
   if (filters.brand) params.set("brand", filters.brand);
   if (filters.query) params.set("q", filters.query);
   if (filters.category) params.set("category", filters.category);
+  if (isVendorCatalog.value) params.set("mine", "1");
   if (Number(filters.minPrice) > defaultFilters.minPrice) {
     params.set("min_price", filters.minPrice);
   }
@@ -140,7 +148,7 @@ async function fetchProducts(url, append = false) {
   isLoading.value = true;
 
   try {
-    const response = await fetch(resolveApiUrl(url));
+    const response = await authStore.authenticatedFetch(resolveApiUrl(url));
 
     if (!response.ok) {
       throw new Error("Could not load products.");
@@ -199,6 +207,12 @@ async function goNext() {
 
 function handleWishlistToggle({ product }) {
   wishlistStore.toggle(product);
+}
+
+function loginAsUser() {
+  const email = authStore.user?.email || "";
+  authStore.clearSession();
+  router.push({ name: "login", query: email ? { email } : {} });
 }
 
 onMounted(() => {
@@ -278,10 +292,32 @@ watch(
           v-else-if="!hasProducts"
           class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-12 text-center dark:border-slate-800 dark:bg-slate-900"
         >
-          <p class="text-sm font-semibold text-slate-700 dark:text-slate-100">No products found.</p>
-          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Products will appear here after they are published.
+          <p class="text-sm font-semibold text-slate-700 dark:text-slate-100">
+            {{ isVendorCatalog ? "You have not added products yet." : "No products found." }}
           </p>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            {{
+              isVendorCatalog
+                ? "Add more products from your vendor dashboard, or log in as a user to view the full catalogue."
+                : "Products will appear here after they are published."
+            }}
+          </p>
+          <div v-if="isVendorCatalog" class="mt-5 flex flex-wrap justify-center gap-3">
+            <button
+              type="button"
+              class="rounded-lg bg-slate-950 px-4 py-2 text-sm font-black text-white hover:bg-cyan-700 dark:bg-cyan-300 dark:text-slate-950"
+              @click="router.push({ name: 'vendor' })"
+            >
+              Add products
+            </button>
+            <button
+              type="button"
+              class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-800"
+              @click="loginAsUser"
+            >
+              Log in as user
+            </button>
+          </div>
         </div>
 
         <TransitionGroup

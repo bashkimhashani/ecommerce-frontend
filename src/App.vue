@@ -13,7 +13,6 @@ import OrderHistory from "./components/OrderHistory.vue";
 import ProfileEditPage from "./components/ProfileEditPage.vue";
 import ProductDetailPage from "./components/ProductDetailPage.vue";
 import ProductListingPage from "./components/ProductListingPage.vue";
-import RegisterPage from "./components/RegisterPage.vue";
 import ResetPasswordPage from "./components/ResetPasswordPage.vue";
 import ShopingCart from "./components/ShopingCart.vue";
 import TenantRegistrationPage from "./components/TenantRegistrationPage.vue";
@@ -39,6 +38,11 @@ const activeView = computed(() => {
   if (route.query.uid && route.query.token) return "reset-password";
   return route.meta.activeView || "catalog";
 });
+const shouldShowAuthStart = computed(
+  () =>
+    !authStore.isAuthenticated &&
+    ["catalog", "login", "register", "tenant-register"].includes(activeView.value)
+);
 
 const selectedOrderNumber = computed(() => String(route.params.orderNumber || ""));
 const selectedProductSlug = computed(() => String(route.params.productSlug || ""));
@@ -132,9 +136,22 @@ function openProductFromChat(slug) {
   showProduct(slug);
 }
 
+function goBackFromProduct() {
+  if (window.history.state?.back) {
+    router.back();
+    return;
+  }
+
+  showCatalog();
+}
+
 watch(
   () => authStore.user?.id || authStore.user?.email || "guest",
-  () => themeStore.syncForCurrentUser()
+  () => {
+    themeStore.syncForCurrentUser();
+    wishlistStore.syncForUser(authStore.user);
+  },
+  { immediate: true }
 );
 
 function updateScrollTopVisibility() {
@@ -160,6 +177,7 @@ onBeforeUnmount(() => {
     class="flex h-screen flex-col overflow-hidden bg-transparent text-slate-950 transition-colors duration-300 dark:text-slate-100"
   >
     <Header
+      v-if="authStore.isAuthenticated"
       :active-view="
         activeView === 'order-detail'
           ? 'orders'
@@ -183,11 +201,11 @@ onBeforeUnmount(() => {
     <Transition name="page-fade" mode="out-in">
       <CheckoutWizard v-if="isCheckoutOpen" @close="closeCheckout" />
 
-      <LoginPage
-        v-else-if="activeView === 'login'"
-        @forgot-password="showForgotPassword"
-        @login-success="handleLoginSuccess"
-      />
+    <LoginPage
+      v-else-if="shouldShowAuthStart || activeView === 'login' || activeView === 'register'"
+      @forgot-password="showForgotPassword"
+      @login-success="handleLoginSuccess"
+    />
 
       <ForgotPasswordPage v-else-if="activeView === 'forgot-password'" @back-to-login="showLogin" />
 
@@ -198,19 +216,14 @@ onBeforeUnmount(() => {
         @back-to-login="showLogin"
       />
 
-      <RegisterPage
-        v-else-if="activeView === 'register'"
-        @register-success="handleRegisterSuccess"
-      />
-
-      <TenantRegistrationPage
+    <TenantRegistrationPage
         v-else-if="activeView === 'tenant-register'"
         @tenant-register-success="handleTenantRegisterSuccess"
       />
 
       <OrderHistory v-else-if="activeView === 'orders'" @view-order="showOrderDetail" />
 
-      <ProfileEditPage v-else-if="activeView === 'profile'" />
+      <ProfileEditPage v-else-if="activeView === 'profile'" @view-product="showProduct" />
 
       <WishlistPage v-else-if="activeView === 'wishlist'" @view-product="showProduct" />
 
@@ -231,7 +244,7 @@ onBeforeUnmount(() => {
                 v-if="selectedProductSlug"
                 :key="`product-${selectedProductSlug}`"
                 :slug="selectedProductSlug"
-                @back="showCatalog"
+                @back="goBackFromProduct"
               />
               <ProductListingPage
                 v-else
@@ -245,8 +258,8 @@ onBeforeUnmount(() => {
       </div>
     </Transition>
 
-    <ShopingCart v-if="!isCheckoutOpen" @checkout="openCheckout" />
-    <ChatWidget @view-product="openProductFromChat" />
+    <ShopingCart v-if="authStore.isAuthenticated && !isCheckoutOpen" @checkout="openCheckout" />
+    <ChatWidget v-if="authStore.isAuthenticated" @view-product="openProductFromChat" />
     <AppFooter class="hidden" />
     <button
       v-if="isScrollTopVisible"

@@ -1,13 +1,12 @@
 <script setup>
 import { Chart, ArcElement, DoughnutController, Legend, Tooltip } from "chart.js";
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from "vue";
-import AIInsightsPanel from "./AIInsightsPanel.vue";
-import AnalyticsChat from "./AnalyticsChat.vue";
+import { useAuthStore } from "../stores/authStore";
 
 Chart.register(ArcElement, DoughnutController, Legend, Tooltip);
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-const authToken = ref("");
+const authStore = useAuthStore();
 const summary = ref({
   order_count: 0,
   revenue: 0,
@@ -16,6 +15,17 @@ const summary = ref({
 const inventoryItems = ref([]);
 const orderSummaryItems = ref([]);
 const quantityDrafts = reactive({});
+const productForm = reactive({
+  name: "",
+  sku: "",
+  price: "",
+  brandName: "",
+  categoryName: "General",
+  stockQuantity: 0,
+});
+const productImageFile = ref(null);
+const productImagePreviewUrl = ref("");
+const productImageInput = ref(null);
 const isLoadingSummary = ref(false);
 const isLoadingInventory = ref(false);
 const isLoadingOrderSummary = ref(false);
@@ -24,7 +34,8 @@ const inventoryError = ref("");
 const orderSummaryError = ref("");
 const savedItemId = ref(null);
 const savingItemId = ref(null);
-const aiRefreshKey = ref(0);
+const isCreatingProduct = ref(false);
+const productMessage = ref("");
 const orderChartCanvas = ref(null);
 let orderChart = null;
 
@@ -57,12 +68,54 @@ const orderSummaryTotal = computed(() =>
 const orderSummaryRevenue = computed(() =>
   orderSummaryItems.value.reduce((total, item) => total + Number(item.total_amount || 0), 0)
 );
+const productPreviewVendor = computed(
+  () => productForm.brandName.trim() || authStore.user?.first_name || "Vendor"
+);
+const productPreviewPrice = computed(() => formatCurrency(productForm.price || 0));
 
 function authHeaders() {
   return {
     "Content-Type": "application/json",
-    ...(authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}),
+    ...(authStore.accessToken ? { Authorization: `Bearer ${authStore.accessToken}` } : {}),
   };
+}
+
+function slugify(value) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function clearProductImagePreview() {
+  if (productImagePreviewUrl.value) {
+    URL.revokeObjectURL(productImagePreviewUrl.value);
+    productImagePreviewUrl.value = "";
+  }
+}
+
+function chooseProductImage() {
+  productImageInput.value?.click();
+}
+
+function handleProductImageChange(event) {
+  const [file] = event.target.files || [];
+  clearProductImagePreview();
+  productImageFile.value = null;
+
+  if (!file) {
+    return;
+  }
+
+  if (!file.type.startsWith("image/")) {
+    inventoryError.value = "Choose an image file for the product.";
+    event.target.value = "";
+    return;
+  }
+
+  productImageFile.value = file;
+  productImagePreviewUrl.value = URL.createObjectURL(file);
 }
 
 function readSummaryValue(keys) {
@@ -252,9 +305,9 @@ async function fetchSummary() {
   summaryError.value = "";
 
   try {
-    const response = await fetch(`${apiBaseUrl}/api/v1/vendor/dashboard/summary/`, {
-      headers: authHeaders(),
-    });
+    const response = await authStore.authenticatedFetch(
+      `${apiBaseUrl}/api/v1/vendor/dashboard/summary/`
+    );
 
     if (!response.ok) {
       throw new Error("Could not load vendor summary.");
@@ -273,9 +326,7 @@ async function fetchInventory() {
   inventoryError.value = "";
 
   try {
-    const response = await fetch(`${apiBaseUrl}/api/v1/vendor/inventory/`, {
-      headers: authHeaders(),
-    });
+    const response = await authStore.authenticatedFetch(`${apiBaseUrl}/api/v1/vendor/inventory/`);
 
     if (!response.ok) {
       throw new Error("Could not load inventory.");
@@ -296,9 +347,9 @@ async function fetchOrderSummary() {
   orderSummaryError.value = "";
 
   try {
-    const response = await fetch(`${apiBaseUrl}/api/v1/vendor/orders/summary/`, {
-      headers: authHeaders(),
-    });
+    const response = await authStore.authenticatedFetch(
+      `${apiBaseUrl}/api/v1/vendor/orders/summary/`
+    );
 
     if (!response.ok) {
       throw new Error("Could not load order summary.");
@@ -318,7 +369,6 @@ async function fetchOrderSummary() {
 }
 
 async function refreshDashboard() {
-  aiRefreshKey.value += 1;
   await Promise.all([fetchSummary(), fetchInventory(), fetchOrderSummary()]);
 }
 
@@ -335,7 +385,7 @@ async function saveQuantity(item) {
   inventoryError.value = "";
 
   try {
-    const response = await fetch(`${apiBaseUrl}/api/v1/vendor/inventory/${item.id}/`, {
+    const response = await authStore.authenticatedFetch(`${apiBaseUrl}/api/v1/vendor/inventory/${item.id}/`, {
       method: "PATCH",
       headers: authHeaders(),
       body: JSON.stringify({
@@ -362,18 +412,100 @@ async function saveQuantity(item) {
   }
 }
 
+async function createProduct() {
+  productMessage.value = "";
+
+  if (!productForm.name.trim() || !productForm.sku.trim() || !productForm.price) {
+    inventoryError.value = "Product name, SKU, and price are required.";
+    return;
+  }
+
+  isCreatingProduct.value = true;
+  inventoryError.value = "";
+
+  try {
+    const response = await authStore.authenticatedFetch(`${apiBaseUrl}/api/v1/catalog/products/`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        name: productForm.name.trim(),
+        slug: slugify(productForm.name),
+        sku: productForm.sku.trim(),
+        status: "active",
+        base_price: productForm.price,
+        brand_name: productForm.brandName.trim() || authStore.user?.first_name || "Vendor",
+        category_name: productForm.categoryName.trim() || "General",
+        stock_quantity: Number(productForm.stockQuantity || 0),
+        tech_specs: {},
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload?.detail || payload?.non_field_errors?.[0] || "Could not create product.");
+    }
+
+    if (productImageFile.value) {
+      const imageData = new FormData();
+      imageData.append("image", productImageFile.value);
+      imageData.append("alt_text", productForm.name.trim());
+      imageData.append("sort_order", "0");
+      imageData.append("is_primary", "true");
+
+      const imageResponse = await authStore.authenticatedFetch(
+        `${apiBaseUrl}/api/v1/catalog/products/${payload.slug}/images/`,
+        {
+          method: "POST",
+          body: imageData,
+        }
+      );
+
+      if (!imageResponse.ok) {
+        const imagePayload = await imageResponse.json().catch(() => ({}));
+        throw new Error(
+          imagePayload?.detail || imagePayload?.image?.[0] || "Product created, but image upload failed."
+        );
+      }
+    }
+
+    resetProductForm();
+    productMessage.value = "Product created inside your tenant.";
+    window.dispatchEvent(new CustomEvent("catalog-search-change"));
+    await refreshDashboard();
+  } catch (error) {
+    inventoryError.value = error.message || "Could not create product.";
+  } finally {
+    isCreatingProduct.value = false;
+  }
+}
+
+function resetProductForm() {
+  productForm.name = "";
+  productForm.sku = "";
+  productForm.price = "";
+  productForm.brandName = "";
+  productForm.categoryName = "General";
+  productForm.stockQuantity = 0;
+  productImageFile.value = null;
+  clearProductImagePreview();
+  if (productImageInput.value) {
+    productImageInput.value.value = "";
+  }
+}
+
 onMounted(() => {
   refreshDashboard();
 });
 
 onBeforeUnmount(() => {
   destroyOrderChart();
+  clearProductImagePreview();
 });
 </script>
 
 <template>
   <section
-    class="min-w-0 flex-1 bg-white px-6 py-5 text-slate-950 dark:bg-slate-950 dark:text-slate-100"
+    class="min-h-0 min-w-0 flex-1 overflow-y-auto bg-white px-6 py-5 text-slate-950 dark:bg-slate-950 dark:text-slate-100"
   >
     <div
       class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-700"
@@ -386,12 +518,6 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <input
-          v-model="authToken"
-          type="password"
-          placeholder="Bearer token"
-          class="h-10 w-52 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none placeholder:text-slate-400 focus:border-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
-        />
         <button
           type="button"
           class="h-10 rounded-md border border-slate-200 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
@@ -424,10 +550,152 @@ onBeforeUnmount(() => {
       {{ summaryError }}
     </p>
 
-    <div class="mb-5 grid gap-4 lg:grid-cols-2">
-      <AIInsightsPanel :auth-token="authToken" :refresh-key="aiRefreshKey" />
-      <AnalyticsChat :auth-token="authToken" />
-    </div>
+    <section
+      class="mb-5 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-700">
+        <div>
+          <h2 class="text-base font-black text-slate-950 dark:text-white">Add product</h2>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Products created here are saved only inside your vendor tenant.
+          </p>
+        </div>
+        <p v-if="productMessage" class="text-sm font-bold text-emerald-600 dark:text-emerald-300">
+          {{ productMessage }}
+        </p>
+      </div>
+
+      <form class="mt-4 grid gap-5 xl:grid-cols-[minmax(0,1fr)_330px]" @submit.prevent="createProduct">
+        <div class="grid gap-4">
+          <div class="grid gap-3 md:grid-cols-2">
+            <label class="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">
+              Product name
+              <input
+                v-model="productForm.name"
+                class="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm normal-case text-slate-950 outline-none focus:border-cyan-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                type="text"
+                placeholder="Apple MacBook Air"
+              />
+            </label>
+            <label class="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">
+              SKU
+              <input
+                v-model="productForm.sku"
+                class="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm normal-case text-slate-950 outline-none focus:border-cyan-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                type="text"
+                placeholder="MBA-13-M3"
+              />
+            </label>
+          </div>
+
+          <div class="grid gap-3 md:grid-cols-3">
+            <label class="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">
+              Price
+              <input
+                v-model="productForm.price"
+                class="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm normal-case text-slate-950 outline-none focus:border-cyan-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="1099"
+              />
+            </label>
+            <label class="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">
+              Stock
+              <input
+                v-model.number="productForm.stockQuantity"
+                class="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm normal-case text-slate-950 outline-none focus:border-cyan-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                type="number"
+                min="0"
+                placeholder="12"
+              />
+            </label>
+            <label class="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">
+              Category
+              <input
+                v-model="productForm.categoryName"
+                class="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm normal-case text-slate-950 outline-none focus:border-cyan-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                type="text"
+                placeholder="Laptops"
+              />
+            </label>
+          </div>
+
+          <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
+            <label class="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">
+              Brand
+              <input
+                v-model="productForm.brandName"
+                class="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm normal-case text-slate-950 outline-none focus:border-cyan-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                type="text"
+                placeholder="Brand"
+              />
+            </label>
+            <div>
+              <input
+                ref="productImageInput"
+                class="sr-only"
+                type="file"
+                accept="image/*"
+                @change="handleProductImageChange"
+              />
+              <button
+                type="button"
+                class="mt-5 h-10 w-full rounded-md border border-slate-200 px-3 text-sm font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                @click="chooseProductImage"
+              >
+                Upload image
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            class="h-11 w-full rounded-md bg-slate-950 px-4 text-sm font-black text-white hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-400 dark:bg-cyan-300 dark:text-slate-950"
+            :disabled="isCreatingProduct"
+          >
+            {{ isCreatingProduct ? "Adding product..." : "Add product" }}
+          </button>
+        </div>
+
+        <article
+          class="grid min-h-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-950"
+        >
+          <div class="relative flex min-h-40 items-center justify-center bg-slate-50 p-4 dark:bg-slate-800">
+            <img
+              v-if="productImagePreviewUrl"
+              :src="productImagePreviewUrl"
+              alt=""
+              class="max-h-44 max-w-full object-contain"
+            />
+            <div v-else class="text-center text-sm font-bold text-slate-400 dark:text-slate-500">
+              Product image preview
+            </div>
+          </div>
+          <div class="p-4">
+            <p class="line-clamp-2 text-base font-black text-slate-950 dark:text-white">
+              {{ productForm.name || "Product name" }}
+            </p>
+            <p class="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
+              {{ productForm.sku || "SKU" }}
+            </p>
+            <p
+              class="mt-3 inline-flex max-w-full rounded-lg border border-cyan-100 bg-cyan-50 px-2 py-1 text-xs font-bold text-cyan-800 dark:border-cyan-800/80 dark:bg-cyan-950/60 dark:text-cyan-200"
+            >
+              <span class="truncate">{{ productPreviewVendor }}</span>
+            </p>
+            <div class="mt-4 flex items-center justify-between gap-3">
+              <p class="text-lg font-black text-emerald-600 dark:text-emerald-300">
+                {{ productPreviewPrice }}
+              </p>
+              <p class="text-xs font-bold text-slate-500 dark:text-slate-400">
+                {{ Number(productForm.stockQuantity || 0) }} stock
+              </p>
+            </div>
+          </div>
+        </article>
+      </form>
+    </section>
 
     <section
       class="mb-5 rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"

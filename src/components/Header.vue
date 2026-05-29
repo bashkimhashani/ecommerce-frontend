@@ -41,7 +41,6 @@ const canViewVendor = computed(
 );
 
 const canViewOrders = computed(() => authStore.role === "customer" && can("read", "order"));
-const showAuthLinks = computed(() => !authStore.isAuthenticated);
 
 const profileImage = computed(
   () => authStore.user?.avatar_thumbnail || authStore.user?.avatar || ""
@@ -78,21 +77,34 @@ const profileInitials = computed(() => {
 
       <div class="flex shrink-0 items-center gap-1">
         <button
-          v-if="authStore.isAuthenticated"
+          v-if="canViewVendor"
           type="button"
-          class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border text-xs font-semibold transition"
+          class="shrink-0 whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-semibold transition"
           :class="
-            activeView === 'profile'
-              ? 'border-slate-950 bg-slate-950 text-white shadow-sm dark:border-slate-200 dark:bg-slate-200 dark:text-slate-950'
-              : 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:text-slate-950 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-cyan-400/40 dark:hover:text-white'
+            activeView === 'vendor'
+              ? 'bg-slate-950 text-white shadow-sm dark:bg-slate-100 dark:text-slate-950'
+              : 'text-slate-500 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white'
           "
-          aria-label="Open profile"
-          title="Profile"
-          @click="emit('show-profile')"
+          @click="emit('show-vendor')"
         >
-          <img v-if="profileImage" class="h-full w-full object-cover" :src="profileImage" alt="" />
-          <span v-else>{{ profileInitials }}</span>
+          Vendor
         </button>
+
+        <button
+          v-if="canViewOrders"
+          type="button"
+          class="shrink-0 whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-semibold transition"
+          :class="
+            activeView === 'orders'
+              ? 'bg-slate-950 text-white shadow-sm dark:bg-slate-100 dark:text-slate-950'
+              : 'text-slate-500 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white'
+          "
+          @click="emit('show-orders')"
+        >
+          Orders
+        </button>
+
+        <ThemeToggle />
 
         <button
           type="button"
@@ -130,52 +142,21 @@ const profileInitials = computed(() => {
         </button>
 
         <button
-          v-if="canViewVendor"
+          v-if="authStore.isAuthenticated"
           type="button"
-          class="shrink-0 whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-semibold transition"
+          class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border text-xs font-semibold transition"
           :class="
-            activeView === 'vendor'
-              ? 'bg-slate-950 text-white shadow-sm dark:bg-slate-100 dark:text-slate-950'
-              : 'text-slate-500 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white'
+            activeView === 'profile'
+              ? 'border-slate-950 bg-slate-950 text-white shadow-sm dark:border-slate-200 dark:bg-slate-200 dark:text-slate-950'
+              : 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:text-slate-950 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-cyan-400/40 dark:hover:text-white'
           "
-          @click="emit('show-vendor')"
+          aria-label="Open profile"
+          title="Profile"
+          @click="emit('show-profile')"
         >
-          Vendor
+          <img v-if="profileImage" class="h-full w-full object-cover" :src="profileImage" alt="" />
+          <span v-else>{{ profileInitials }}</span>
         </button>
-
-        <button
-          v-if="canViewOrders"
-          type="button"
-          class="shrink-0 whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-semibold transition"
-          :class="
-            activeView === 'orders'
-              ? 'bg-slate-950 text-white shadow-sm dark:bg-slate-100 dark:text-slate-950'
-              : 'text-slate-500 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white'
-          "
-          @click="emit('show-orders')"
-        >
-          Orders
-        </button>
-
-        <button
-          v-if="showAuthLinks"
-          type="button"
-          class="shrink-0 whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900"
-          @click="emit('show-login')"
-        >
-          Login
-        </button>
-
-        <button
-          v-if="showAuthLinks"
-          type="button"
-          class="shrink-0 whitespace-nowrap rounded-lg bg-slate-950 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-cyan-600 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-200"
-          @click="emit('show-register')"
-        >
-          Register
-        </button>
-
-        <ThemeToggle />
       </div>
 
       <div class="order-last min-w-0 flex-[1_1_100%] lg:order-none lg:min-w-64 lg:flex-[0_1_22rem]">
