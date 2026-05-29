@@ -48,13 +48,6 @@ const visibleProducts = computed(() => {
   }));
 });
 const pageTitle = computed(() => props.selectedCategory?.name || "Product Catalog");
-const pageSubtitle = computed(() => {
-  if (props.selectedCategory?.name) {
-    return `Browsing ${props.selectedCategory.name}`;
-  }
-
-  return "Browse current tech products without leaving this page.";
-});
 
 function productListUrl() {
   const params = filtersToSearchParams(activeFilters.value);
