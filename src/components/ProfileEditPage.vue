@@ -267,7 +267,7 @@ onBeforeUnmount(clearAvatarPreview);
 
 <template>
   <main
-    class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950"
+    class="mx-auto min-h-0 w-full max-w-7xl flex-1 overflow-y-auto border-x border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950"
   >
     <section
       class="bg-white px-5 py-8 text-slate-950 dark:bg-slate-950 dark:text-slate-100 sm:px-8 lg:px-12"
