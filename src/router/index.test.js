@@ -13,6 +13,19 @@ describe("router navigation guards", () => {
     await router.replace("/");
   });
 
+  it("allows unauthenticated shoppers to browse the catalog", async () => {
+    await router.push("/");
+
+    expect(router.currentRoute.value.name).toBe("catalog");
+  });
+
+  it("allows unauthenticated shoppers to view product details", async () => {
+    await router.push("/products/apple-macbook-air-13-m3");
+
+    expect(router.currentRoute.value.name).toBe("product-detail");
+    expect(router.currentRoute.value.params.productSlug).toBe("apple-macbook-air-13-m3");
+  });
+
   it("redirects authenticated customers away from vendor routes", async () => {
     const authStore = useAuthStore();
     authStore.setSession({
