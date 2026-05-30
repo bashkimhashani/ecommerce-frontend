@@ -1,13 +1,13 @@
 <script setup>
 import { Chart, ArcElement, DoughnutController, Legend, Tooltip } from "chart.js";
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from "vue";
-import AIInsightsPanel from "./AIInsightsPanel.vue";
-import AnalyticsChat from "./AnalyticsChat.vue";
+import { useAuthStore } from "../stores/authStore";
+import VendorProductForm from "./VendorProductForm.vue";
 
 Chart.register(ArcElement, DoughnutController, Legend, Tooltip);
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-const authToken = ref("");
+const authStore = useAuthStore();
 const summary = ref({
   order_count: 0,
   revenue: 0,
@@ -24,7 +24,6 @@ const inventoryError = ref("");
 const orderSummaryError = ref("");
 const savedItemId = ref(null);
 const savingItemId = ref(null);
-const aiRefreshKey = ref(0);
 const orderChartCanvas = ref(null);
 let orderChart = null;
 
@@ -61,7 +60,7 @@ const orderSummaryRevenue = computed(() =>
 function authHeaders() {
   return {
     "Content-Type": "application/json",
-    ...(authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}),
+    ...(authStore.accessToken ? { Authorization: `Bearer ${authStore.accessToken}` } : {}),
   };
 }
 
@@ -318,7 +317,6 @@ async function fetchOrderSummary() {
 }
 
 async function refreshDashboard() {
-  aiRefreshKey.value += 1;
   await Promise.all([fetchSummary(), fetchInventory(), fetchOrderSummary()]);
 }
 
@@ -373,7 +371,7 @@ onBeforeUnmount(() => {
 
 <template>
   <section
-    class="min-w-0 flex-1 bg-white px-6 py-5 text-slate-950 dark:bg-slate-950 dark:text-slate-100"
+    class="min-w-0 flex-1 overflow-y-auto bg-white px-6 py-5 text-slate-950 dark:bg-slate-950 dark:text-slate-100"
   >
     <div
       class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-700"
@@ -386,12 +384,6 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <input
-          v-model="authToken"
-          type="password"
-          placeholder="Bearer token"
-          class="h-10 w-52 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none placeholder:text-slate-400 focus:border-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
-        />
         <button
           type="button"
           class="h-10 rounded-md border border-slate-200 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
@@ -424,10 +416,7 @@ onBeforeUnmount(() => {
       {{ summaryError }}
     </p>
 
-    <div class="mb-5 grid gap-4 lg:grid-cols-2">
-      <AIInsightsPanel :auth-token="authToken" :refresh-key="aiRefreshKey" />
-      <AnalyticsChat :auth-token="authToken" />
-    </div>
+    <VendorProductForm class="mb-5 rounded-md border border-slate-200 dark:border-slate-700" />
 
     <section
       class="mb-5 rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"

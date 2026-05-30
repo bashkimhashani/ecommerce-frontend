@@ -1,11 +1,13 @@
 <script setup>
 import { computed, reactive, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/authStore";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 const emit = defineEmits(["tenant-register-success"]);
 const authStore = useAuthStore();
+const router = useRouter();
 
 const plans = [
   {
@@ -55,6 +57,8 @@ const autoSlug = ref(true);
 const isSubmitting = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
 
 const errors = computed(() => {
   const nextErrors = {};
@@ -157,6 +161,15 @@ function parseTenantRegistrationError(payload) {
   return "Could not register your business.";
 }
 
+function goBack() {
+  if (window.history.length > 1) {
+    router.back();
+    return;
+  }
+
+  router.push({ name: "login" });
+}
+
 async function submitTenantRegistration() {
   touchAllFields();
   errorMessage.value = "";
@@ -205,32 +218,42 @@ async function submitTenantRegistration() {
 </script>
 
 <template>
-  <main class="mx-auto w-full max-w-7xl border-x border-slate-200 bg-white">
-    <section class="grid min-h-[calc(100vh-81px)] bg-white lg:grid-cols-[minmax(0,1fr)_560px]">
+  <main
+    class="min-h-screen bg-[radial-gradient(circle_at_top_right,_rgba(16,185,129,0.2),_transparent_34%),linear-gradient(135deg,_#020617_0%,_#0f172a_42%,_#f8fafc_42%,_#ecfeff_100%)] px-4 py-6 text-slate-950"
+  >
+    <section class="mx-auto grid min-h-[calc(100vh-3rem)] max-w-6xl overflow-hidden rounded-2xl border border-white/70 bg-white/90 shadow-2xl shadow-slate-950/20 backdrop-blur lg:grid-cols-[minmax(0,1fr)_560px]">
       <div
-        class="flex flex-col justify-between border-r border-slate-200 px-6 py-10 sm:px-10 lg:px-14"
+        class="hidden flex-col justify-between border-r border-slate-200 bg-slate-950 px-6 py-10 text-white sm:px-10 lg:flex lg:px-14"
       >
         <div>
-          <p class="text-sm font-semibold uppercase text-emerald-700">Vendor onboarding</p>
-          <h1 class="mt-4 max-w-2xl text-4xl font-semibold text-slate-950">
+          <button
+            type="button"
+            class="mb-8 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-black text-slate-200 transition hover:bg-white/15 hover:text-white"
+            @click="goBack"
+          >
+            <span aria-hidden="true">&lt;</span>
+            Back
+          </button>
+          <p class="text-sm font-semibold uppercase text-emerald-300">Vendor onboarding</p>
+          <h1 class="mt-4 max-w-2xl text-4xl font-black leading-tight text-white">
             Register your business and open a Vendora storefront.
           </h1>
-          <p class="mt-4 max-w-xl text-base leading-7 text-slate-600">
-            Create the tenant, choose a plan, and set up the vendor admin account in one flow.
+          <p class="mt-4 max-w-xl text-base leading-7 text-slate-300">
+            Create a tenant, choose a plan, and set up the vendor admin account in one flow.
           </p>
         </div>
 
-        <dl class="mt-10 grid max-w-2xl gap-4 text-sm text-slate-600 sm:grid-cols-3">
-          <div class="border-t border-slate-200 pt-4">
-            <dt class="font-semibold text-slate-950">Tenant</dt>
-            <dd class="mt-1">Dedicated store identity.</dd>
+        <dl class="mt-10 grid max-w-2xl gap-4 text-sm text-slate-300 sm:grid-cols-3">
+          <div class="border-t border-white/15 pt-4">
+            <dt class="font-semibold text-white">Tenant</dt>
+            <dd class="mt-1">Dedicated store data.</dd>
           </div>
-          <div class="border-t border-slate-200 pt-4">
-            <dt class="font-semibold text-slate-950">Plan</dt>
+          <div class="border-t border-white/15 pt-4">
+            <dt class="font-semibold text-white">Plan</dt>
             <dd class="mt-1">Free, Basic, or Premium.</dd>
           </div>
-          <div class="border-t border-slate-200 pt-4">
-            <dt class="font-semibold text-slate-950">Admin</dt>
+          <div class="border-t border-white/15 pt-4">
+            <dt class="font-semibold text-white">Admin</dt>
             <dd class="mt-1">Vendor session after signup.</dd>
           </div>
         </dl>
@@ -238,6 +261,15 @@ async function submitTenantRegistration() {
 
       <div class="px-6 py-10 sm:px-10">
         <form class="w-full" novalidate @submit.prevent="submitTenantRegistration">
+          <button
+            type="button"
+            class="mb-5 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-600 transition hover:border-emerald-300 hover:text-slate-950 lg:hidden"
+            @click="goBack"
+          >
+            <span aria-hidden="true">&lt;</span>
+            Back
+          </button>
+
           <div>
             <h2 class="text-2xl font-semibold text-slate-950">Business registration</h2>
             <p class="mt-2 text-sm text-slate-500">
@@ -419,25 +451,58 @@ async function submitTenantRegistration() {
             />
 
             <div class="mt-4 grid gap-4 sm:grid-cols-2">
-              <div>
+              <div class="relative">
                 <label class="block text-sm font-medium text-slate-700" for="tenant-password">
                   Password
                 </label>
                 <input
                   id="tenant-password"
                   v-model="form.password"
-                  class="mt-2 block w-full rounded-md border px-3 py-2.5 text-sm text-slate-950 outline-none transition focus:border-slate-950"
+                  class="mt-2 block w-full rounded-md border px-3 py-2.5 pr-12 text-sm text-slate-950 outline-none transition focus:border-slate-950"
                   :class="fieldError('password') ? 'border-red-300' : 'border-slate-300'"
-                  type="password"
+                  :type="showPassword ? 'text' : 'password'"
                   autocomplete="new-password"
                   @blur="touched.password = true"
                 />
+                <button
+                  type="button"
+                  class="absolute right-2 top-8 flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-950"
+                  :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                  @click="showPassword = !showPassword"
+                >
+                  <svg
+                    class="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path
+                      v-if="!showPassword"
+                      d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"
+                    />
+                    <circle v-if="!showPassword" cx="12" cy="12" r="3" />
+                    <path v-if="showPassword" d="M3 3l18 18" />
+                    <path v-if="showPassword" d="M10.6 10.6A2 2 0 0 0 13.4 13.4" />
+                    <path
+                      v-if="showPassword"
+                      d="M9.9 4.2A10.7 10.7 0 0 1 12 4c6.5 0 10 8 10 8a18.1 18.1 0 0 1-3.2 4.4"
+                    />
+                    <path
+                      v-if="showPassword"
+                      d="M6.1 6.1A18.2 18.2 0 0 0 2 12s3.5 8 10 8a10.8 10.8 0 0 0 4.1-.8"
+                    />
+                  </svg>
+                </button>
                 <p v-if="fieldError('password')" class="mt-1 text-xs text-red-600">
                   {{ fieldError("password") }}
                 </p>
               </div>
 
-              <div>
+              <div class="relative">
                 <label
                   class="block text-sm font-medium text-slate-700"
                   for="tenant-confirm-password"
@@ -447,12 +512,45 @@ async function submitTenantRegistration() {
                 <input
                   id="tenant-confirm-password"
                   v-model="form.confirmPassword"
-                  class="mt-2 block w-full rounded-md border px-3 py-2.5 text-sm text-slate-950 outline-none transition focus:border-slate-950"
+                  class="mt-2 block w-full rounded-md border px-3 py-2.5 pr-12 text-sm text-slate-950 outline-none transition focus:border-slate-950"
                   :class="fieldError('confirmPassword') ? 'border-red-300' : 'border-slate-300'"
-                  type="password"
+                  :type="showConfirmPassword ? 'text' : 'password'"
                   autocomplete="new-password"
                   @blur="touched.confirmPassword = true"
                 />
+                <button
+                  type="button"
+                  class="absolute right-2 top-8 flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-950"
+                  :aria-label="showConfirmPassword ? 'Hide password' : 'Show password'"
+                  @click="showConfirmPassword = !showConfirmPassword"
+                >
+                  <svg
+                    class="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path
+                      v-if="!showConfirmPassword"
+                      d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"
+                    />
+                    <circle v-if="!showConfirmPassword" cx="12" cy="12" r="3" />
+                    <path v-if="showConfirmPassword" d="M3 3l18 18" />
+                    <path v-if="showConfirmPassword" d="M10.6 10.6A2 2 0 0 0 13.4 13.4" />
+                    <path
+                      v-if="showConfirmPassword"
+                      d="M9.9 4.2A10.7 10.7 0 0 1 12 4c6.5 0 10 8 10 8a18.1 18.1 0 0 1-3.2 4.4"
+                    />
+                    <path
+                      v-if="showConfirmPassword"
+                      d="M6.1 6.1A18.2 18.2 0 0 0 2 12s3.5 8 10 8a10.8 10.8 0 0 0 4.1-.8"
+                    />
+                  </svg>
+                </button>
                 <p v-if="fieldError('confirmPassword')" class="mt-1 text-xs text-red-600">
                   {{ fieldError("confirmPassword") }}
                 </p>

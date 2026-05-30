@@ -56,6 +56,16 @@ const routes = [
     },
   },
   {
+    path: "/wishlist",
+    name: "wishlist",
+    component: RouteShell,
+    meta: {
+      activeView: "wishlist",
+      requiresAuth: true,
+      roles: ["customer"],
+    },
+  },
+  {
     path: "/login",
     name: "login",
     component: RouteShell,
@@ -100,6 +110,14 @@ router.beforeEach((to) => {
   const authStore = useAuthStore();
   const allowedRoles = to.meta.roles || [];
   const requiresAuth = to.meta.requiresAuth || allowedRoles.length > 0;
+  const publicViews = ["login", "register", "tenant-register", "forgot-password", "reset-password"];
+
+  if (!authStore.isAuthenticated && !publicViews.includes(to.meta.activeView)) {
+    return {
+      name: "login",
+      query: { redirect: to.fullPath },
+    };
+  }
 
   if (requiresAuth && !authStore.isAuthenticated) {
     return {
