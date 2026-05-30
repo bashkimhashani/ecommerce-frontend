@@ -221,3 +221,17 @@ onBeforeUnmount(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+input[type="search"]::-ms-clear {
+  display: none;
+  height: 0;
+  width: 0;
+}
+</style>
