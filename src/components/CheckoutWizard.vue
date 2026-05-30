@@ -2,6 +2,7 @@
 import { loadStripe } from "@stripe/stripe-js";
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { useAuthStore } from "../stores/authStore";
+import { buildJsonRequestOptions } from "../utils/apiRequest";
 
 const emit = defineEmits(["close"]);
 const authStore = useAuthStore();
@@ -128,15 +129,10 @@ function authHeaders() {
 }
 
 async function apiRequest(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...authHeaders(),
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
+  const response = await fetch(
+    `${API_BASE_URL}${path}`,
+    buildJsonRequestOptions(options, authHeaders())
+  );
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
