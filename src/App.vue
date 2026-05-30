@@ -24,6 +24,7 @@ import WishlistPage from "./components/WishlistPage.vue";
 import { useAuthStore } from "./stores/authStore";
 import { useThemeStore } from "./stores/themeStore";
 import { useWishlistStore } from "./stores/wishlistStore";
+import { shouldShowAppChrome } from "./utils/appChrome";
 
 const route = useRoute();
 const router = useRouter();
@@ -40,9 +41,8 @@ const activeView = computed(() => {
   if (route.query.uid && route.query.token) return "reset-password";
   return route.meta.activeView || "catalog";
 });
-const authViews = ["login", "register", "tenant-register", "forgot-password", "reset-password"];
 const showAppChrome = computed(
-  () => authStore.isAuthenticated && !authViews.includes(activeView.value)
+  () => shouldShowAppChrome(activeView.value, authStore.isAuthenticated)
 );
 const isVendorUser = computed(() => ["vendor_admin", "store_staff", "superadmin"].includes(authStore.role));
 

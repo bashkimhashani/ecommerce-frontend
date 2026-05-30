@@ -1,8 +1,15 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import {
+  buildCatalogSearchLocation,
+  readCatalogSearchQuery,
+} from "../utils/catalogSearchRoute";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-const query = ref(readQueryFromUrl());
+const route = useRoute();
+const router = useRouter();
+const query = ref(readCatalogSearchQuery(route.query));
 const suggestions = ref([]);
 const isLoading = ref(false);
 const errorMessage = ref("");
@@ -14,36 +21,12 @@ let suppressNextSuggestionLoad = false;
 
 const hasSuggestions = computed(() => suggestions.value.length > 0);
 
-function readQueryFromUrl() {
-  if (typeof window === "undefined") {
-    return "";
-  }
-
-  return new URLSearchParams(window.location.search).get("q") || "";
-}
-
-function syncQueryToUrl(nextQuery) {
+async function syncQueryToUrl(nextQuery) {
   if (typeof window === "undefined") {
     return;
   }
 
-  const params = new URLSearchParams(window.location.search);
-  const cleanQuery = nextQuery.trim();
-
-  if (cleanQuery) {
-    params.set("q", cleanQuery);
-  } else {
-    params.delete("q");
-  }
-
-  const queryString = params.toString();
-  const nextSearch = queryString ? `?${queryString}` : "";
-  const nextUrl = `${window.location.pathname}${nextSearch}${window.location.hash}`;
-  const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-
-  if (nextUrl !== currentUrl) {
-    window.history.pushState({}, "", nextUrl);
-  }
+  await router.push(buildCatalogSearchLocation(route.query, nextQuery));
 
   window.dispatchEvent(new CustomEvent("catalog-search-change"));
 }
@@ -93,17 +76,17 @@ async function loadSuggestions(searchTerm) {
   }
 }
 
-function submitSearch(nextQuery = query.value) {
+async function submitSearch(nextQuery = query.value) {
   suppressNextSuggestionLoad = true;
   query.value = nextQuery;
-  syncQueryToUrl(nextQuery);
+  await syncQueryToUrl(nextQuery);
   resetDropdown();
 }
 
-function clearSearch() {
+async function clearSearch() {
   suppressNextSuggestionLoad = true;
   query.value = "";
-  syncQueryToUrl("");
+  await syncQueryToUrl("");
   resetDropdown();
 }
 
@@ -140,7 +123,7 @@ function handleOutsideClick(event) {
 }
 
 function handleUrlSearchChange() {
-  query.value = readQueryFromUrl();
+  query.value = readCatalogSearchQuery(route.query);
 }
 
 watch(query, (nextQuery) => {
