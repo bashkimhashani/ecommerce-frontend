@@ -6,6 +6,7 @@ import VendorProductImageGallery from "./VendorProductImageGallery.vue";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const authStore = useAuthStore();
+const emit = defineEmits(["saved"]);
 
 const blankProduct = {
   name: "",
@@ -237,6 +238,12 @@ async function saveProduct() {
       ? "Product and images saved."
       : "Product saved.";
     saveState.value = "saved";
+    emit("saved", { ...payload, hasUploadedImages: Boolean(localImages.value.length) });
+    window.dispatchEvent(
+      new CustomEvent("vendor-product:saved", {
+        detail: { ...payload, hasUploadedImages: Boolean(localImages.value.length) },
+      })
+    );
   } catch (error) {
     responseMessage.value = error.message || "Could not save product.";
     saveState.value = "error";

@@ -13,6 +13,7 @@ import OrderHistory from "./components/OrderHistory.vue";
 import ProfileEditPage from "./components/ProfileEditPage.vue";
 import ProductDetailPage from "./components/ProductDetailPage.vue";
 import ProductListingPage from "./components/ProductListingPage.vue";
+import RefundPolicyPage from "./components/RefundPolicyPage.vue";
 import RegisterPage from "./components/RegisterPage.vue";
 import ResetPasswordPage from "./components/ResetPasswordPage.vue";
 import ShopingCart from "./components/ShopingCart.vue";
@@ -43,6 +44,7 @@ const authViews = ["login", "register", "tenant-register", "forgot-password", "r
 const showAppChrome = computed(
   () => authStore.isAuthenticated && !authViews.includes(activeView.value)
 );
+const isVendorUser = computed(() => ["vendor_admin", "store_staff", "superadmin"].includes(authStore.role));
 
 const selectedOrderNumber = computed(() => String(route.params.orderNumber || ""));
 const selectedProductSlug = computed(() => String(route.params.productSlug || ""));
@@ -218,6 +220,8 @@ onBeforeUnmount(() => {
 
       <ProfileEditPage v-else-if="activeView === 'profile'" />
 
+      <RefundPolicyPage v-else-if="activeView === 'refund-policy'" />
+
       <WishlistPage v-else-if="activeView === 'wishlist'" @view-product="showProduct" />
 
       <OrderDetail
@@ -251,7 +255,7 @@ onBeforeUnmount(() => {
       </div>
     </Transition>
 
-    <ShopingCart v-if="showAppChrome && !isCheckoutOpen" @checkout="openCheckout" />
+    <ShopingCart v-if="showAppChrome && !isCheckoutOpen && !isVendorUser" @checkout="openCheckout" />
     <ChatWidget v-if="showAppChrome" @view-product="openProductFromChat" />
     <AppFooter class="hidden" />
     <button

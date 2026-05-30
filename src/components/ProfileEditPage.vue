@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/authStore";
+import PurchasedItemsPanel from "./PurchasedItemsPanel.vue";
 import ThemeToggle from "./ThemeToggle.vue";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
@@ -78,6 +79,7 @@ const saveIndicatorClass = computed(() => {
   }
   return "border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300";
 });
+const isCustomer = computed(() => authStore.role === "customer");
 
 function authorizationHeaders() {
   return authStore.accessToken ? { Authorization: `Bearer ${authStore.accessToken}` } : {};
@@ -86,6 +88,10 @@ function authorizationHeaders() {
 function logout() {
   authStore.clearSession();
   router.push({ name: "login" });
+}
+
+function showRefundPolicy() {
+  router.push({ name: "refund-policy" });
 }
 
 function setFormFromUser(user) {
@@ -367,6 +373,14 @@ onBeforeUnmount(clearAvatarPreview);
             >
               Logout
             </button>
+
+            <button
+              type="button"
+              class="inline-flex h-11 w-full items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:border-slate-950 hover:text-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-300"
+              @click="showRefundPolicy"
+            >
+              Refund policy
+            </button>
           </div>
         </aside>
 
@@ -488,6 +502,8 @@ onBeforeUnmount(clearAvatarPreview);
           </div>
         </div>
       </form>
+
+      <PurchasedItemsPanel v-if="isCustomer" />
     </section>
   </main>
 </template>

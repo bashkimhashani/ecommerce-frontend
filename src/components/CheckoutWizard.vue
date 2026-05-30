@@ -1,8 +1,10 @@
 <script setup>
 import { loadStripe } from "@stripe/stripe-js";
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import { useAuthStore } from "../stores/authStore";
 
 const emit = defineEmits(["close"]);
+const authStore = useAuthStore();
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
@@ -96,8 +98,32 @@ watch(
   { deep: true }
 );
 
+function readStoredToken(storage) {
+  const directToken = storage.getItem("accessToken") || storage.getItem("access");
+  if (directToken) {
+    return directToken;
+  }
+
+  for (const key of ["auth", "authStore", "session", "vendora.auth"]) {
+    try {
+      const payload = JSON.parse(storage.getItem(key));
+      const token = payload?.accessToken || payload?.access || payload?.token;
+      if (token) {
+        return token;
+      }
+    } catch {
+      // Ignore malformed legacy session entries.
+    }
+  }
+
+  return "";
+}
+
 function authHeaders() {
-  const token = localStorage.getItem("accessToken") || localStorage.getItem("access");
+  const token =
+    authStore.accessToken ||
+    readStoredToken(localStorage) ||
+    readStoredToken(sessionStorage);
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -268,6 +294,7 @@ async function initializeStripeElement() {
   }
 
   try {
+    const isDarkMode = document.documentElement.classList.contains("dark");
     stripePromise = stripePromise || loadStripe(STRIPE_PUBLISHABLE_KEY);
     stripeInstance = await stripePromise;
     if (!stripeInstance) {
@@ -279,11 +306,11 @@ async function initializeStripeElement() {
       hidePostalCode: true,
       style: {
         base: {
-          color: "#171717",
+          color: isDarkMode ? "#f8fafc" : "#171717",
           fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
           fontSize: "16px",
           "::placeholder": {
-            color: "#737373",
+            color: isDarkMode ? "#94a3b8" : "#737373",
           },
         },
         invalid: {
@@ -434,19 +461,24 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="mx-auto max-w-6xl px-5 py-8" aria-labelledby="checkout-title">
+  <section
+    class="mx-auto max-w-6xl px-5 py-8 text-slate-950 dark:text-slate-100"
+    aria-labelledby="checkout-title"
+  >
     <div
-      class="mb-6 flex flex-col gap-4 border-b border-neutral-200 pb-5 sm:flex-row sm:items-end sm:justify-between"
+      class="mb-6 flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-cyan-400/20 sm:flex-row sm:items-end sm:justify-between"
     >
       <div>
-        <p class="text-sm font-semibold uppercase text-emerald-700">Secure checkout</p>
-        <h1 id="checkout-title" class="mt-2 text-3xl font-bold text-neutral-950">
+        <p class="text-sm font-semibold uppercase text-emerald-700 dark:text-emerald-300">
+          Secure checkout
+        </p>
+        <h1 id="checkout-title" class="mt-2 text-3xl font-bold text-slate-950 dark:text-white">
           Complete your order
         </h1>
       </div>
 
       <button
-        class="h-10 rounded-md border border-neutral-300 px-4 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
+        class="h-10 rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
         type="button"
         @click="emit('close')"
       >
@@ -460,14 +492,14 @@ onBeforeUnmount(() => {
           class="flex h-12 w-full items-center gap-3 rounded-md border px-3 text-left text-sm transition"
           :class="
             index <= activeStepIndex
-              ? 'border-emerald-600 bg-emerald-50 text-emerald-900'
-              : 'border-neutral-200 bg-white text-neutral-500'
+              ? 'border-emerald-600 bg-emerald-50 text-emerald-900 dark:border-emerald-400 dark:bg-emerald-950/50 dark:text-emerald-100'
+              : 'border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400'
           "
           type="button"
           @click="goToStep(step.id)"
         >
           <span
-            class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold"
+            class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold dark:bg-slate-950"
           >
             {{ index + 1 }}
           </span>
@@ -478,82 +510,84 @@ onBeforeUnmount(() => {
 
     <div
       v-if="errorMessage"
-      class="mt-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+      class="mt-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"
     >
       {{ errorMessage }}
     </div>
 
     <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <div class="rounded-md border border-neutral-200 bg-white p-5 shadow-sm">
+      <div
+        class="rounded-md border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900"
+      >
         <form v-if="currentStep === 'address'" class="grid gap-4" @submit.prevent="submitAddress">
           <div class="grid gap-4 sm:grid-cols-2">
-            <label class="grid gap-1 text-sm font-medium text-neutral-700">
+            <label class="grid gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
               Full name
               <input
                 v-model="address.full_name"
-                class="h-11 rounded-md border border-neutral-300 px-3 text-neutral-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                class="h-11 rounded-md border border-slate-300 bg-white px-3 text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-emerald-950"
                 required
               />
             </label>
-            <label class="grid gap-1 text-sm font-medium text-neutral-700">
+            <label class="grid gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
               Phone
               <input
                 v-model="address.phone"
-                class="h-11 rounded-md border border-neutral-300 px-3 text-neutral-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                class="h-11 rounded-md border border-slate-300 bg-white px-3 text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-emerald-950"
                 required
               />
             </label>
           </div>
 
-          <label class="grid gap-1 text-sm font-medium text-neutral-700">
+          <label class="grid gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
             Address line 1
             <input
               v-model="address.line1"
-              class="h-11 rounded-md border border-neutral-300 px-3 text-neutral-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+              class="h-11 rounded-md border border-slate-300 bg-white px-3 text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-emerald-950"
               required
             />
           </label>
 
-          <label class="grid gap-1 text-sm font-medium text-neutral-700">
+          <label class="grid gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
             Address line 2
             <input
               v-model="address.line2"
-              class="h-11 rounded-md border border-neutral-300 px-3 text-neutral-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+              class="h-11 rounded-md border border-slate-300 bg-white px-3 text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-emerald-950"
             />
           </label>
 
           <div class="grid gap-4 sm:grid-cols-3">
-            <label class="grid gap-1 text-sm font-medium text-neutral-700">
+            <label class="grid gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
               City
               <input
                 v-model="address.city"
-                class="h-11 rounded-md border border-neutral-300 px-3 text-neutral-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                class="h-11 rounded-md border border-slate-300 bg-white px-3 text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-emerald-950"
                 required
               />
             </label>
-            <label class="grid gap-1 text-sm font-medium text-neutral-700">
+            <label class="grid gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
               Postal code
               <input
                 v-model="address.postal_code"
-                class="h-11 rounded-md border border-neutral-300 px-3 text-neutral-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                class="h-11 rounded-md border border-slate-300 bg-white px-3 text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-emerald-950"
                 required
               />
             </label>
-            <label class="grid gap-1 text-sm font-medium text-neutral-700">
+            <label class="grid gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
               Country
               <input
                 v-model="address.country"
-                class="h-11 rounded-md border border-neutral-300 px-3 text-neutral-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                class="h-11 rounded-md border border-slate-300 bg-white px-3 text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-emerald-950"
                 required
               />
             </label>
           </div>
 
-          <label class="grid gap-1 text-sm font-medium text-neutral-700">
+          <label class="grid gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
             State or region
             <input
               v-model="address.state"
-              class="h-11 rounded-md border border-neutral-300 px-3 text-neutral-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+              class="h-11 rounded-md border border-slate-300 bg-white px-3 text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-emerald-950"
             />
           </label>
 
@@ -573,30 +607,30 @@ onBeforeUnmount(() => {
           class="grid gap-4"
           @submit.prevent="submitPayment"
         >
-          <label class="grid gap-1 text-sm font-medium text-neutral-700">
+          <label class="grid gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
             Name on card
             <input
               v-model="payment.cardholder"
               autocomplete="cc-name"
-              class="h-11 rounded-md border border-neutral-300 px-3 text-neutral-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+              class="h-11 rounded-md border border-slate-300 bg-white px-3 text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-emerald-950"
               required
             />
           </label>
 
-          <div class="grid gap-1 text-sm font-medium text-neutral-700">
+          <div class="grid gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
             Card details
             <div
               id="stripe-card-element"
-              class="min-h-11 rounded-md border border-neutral-300 bg-white px-3 py-3 text-neutral-950 outline-none transition focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-100"
+              class="min-h-11 rounded-md border border-slate-300 bg-white px-3 py-3 text-slate-950 outline-none transition focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus-within:ring-emerald-950"
             />
-            <p v-if="stripeError" class="text-sm font-medium text-red-700">
+            <p v-if="stripeError" class="text-sm font-medium text-red-700 dark:text-red-300">
               {{ stripeError }}
             </p>
           </div>
 
           <div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-between">
             <button
-              class="h-11 rounded-md border border-neutral-300 px-5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
+              class="h-11 rounded-md border border-slate-300 px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               type="button"
               @click="goBackToStep('address')"
             >
@@ -613,42 +647,46 @@ onBeforeUnmount(() => {
         </form>
 
         <div v-else class="grid gap-5">
-          <div class="rounded-md border border-emerald-200 bg-emerald-50 p-4">
-            <h2 class="text-lg font-semibold text-emerald-950">Checkout details saved</h2>
-            <p class="mt-1 text-sm text-emerald-800">
+          <div
+            class="rounded-md border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/40"
+          >
+            <h2 class="text-lg font-semibold text-emerald-950 dark:text-emerald-100">
+              Checkout details saved
+            </h2>
+            <p class="mt-1 text-sm text-emerald-800 dark:text-emerald-200">
               Your address and payment details are ready for the final order creation step.
             </p>
           </div>
 
           <dl class="grid gap-3 text-sm">
-            <div class="flex justify-between gap-4 border-b border-neutral-100 pb-3">
-              <dt class="text-neutral-500">Checkout session</dt>
-              <dd class="font-semibold text-neutral-950">
+            <div class="flex justify-between gap-4 border-b border-slate-100 pb-3 dark:border-slate-800">
+              <dt class="text-slate-500 dark:text-slate-400">Checkout session</dt>
+              <dd class="font-semibold text-slate-950 dark:text-slate-100">
                 #{{ checkoutSession?.id || "Pending" }}
               </dd>
             </div>
-            <div class="flex justify-between gap-4 border-b border-neutral-100 pb-3">
-              <dt class="text-neutral-500">Ship to</dt>
-              <dd class="text-right font-semibold text-neutral-950">
+            <div class="flex justify-between gap-4 border-b border-slate-100 pb-3 dark:border-slate-800">
+              <dt class="text-slate-500 dark:text-slate-400">Ship to</dt>
+              <dd class="text-right font-semibold text-slate-950 dark:text-slate-100">
                 {{ address.city }}, {{ address.country }}
               </dd>
             </div>
             <div class="flex justify-between gap-4">
-              <dt class="text-neutral-500">Payment</dt>
-              <dd class="font-semibold text-neutral-950">{{ maskedCard }}</dd>
+              <dt class="text-slate-500 dark:text-slate-400">Payment</dt>
+              <dd class="font-semibold text-slate-950 dark:text-slate-100">{{ maskedCard }}</dd>
             </div>
           </dl>
 
           <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
             <button
-              class="h-11 rounded-md border border-neutral-300 px-5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
+              class="h-11 rounded-md border border-slate-300 px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               type="button"
               @click="goBackToStep('payment')"
             >
               Back
             </button>
             <button
-              class="h-11 rounded-md bg-neutral-950 px-5 text-sm font-semibold text-white transition hover:bg-neutral-800"
+              class="h-11 rounded-md bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-300"
               type="button"
               @click="resetCheckout"
             >
@@ -659,42 +697,46 @@ onBeforeUnmount(() => {
       </div>
 
       <aside
-        class="self-start rounded-md border border-neutral-200 bg-white p-5 shadow-sm"
+        class="self-start rounded-md border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900"
         aria-label="Order summary"
       >
-        <h2 class="text-base font-semibold text-neutral-950">Order summary</h2>
+        <h2 class="text-base font-semibold text-slate-950 dark:text-white">Order summary</h2>
 
         <div v-if="isLoading" class="mt-4 space-y-3">
           <div
             v-for="index in 3"
             :key="index"
-            class="h-14 animate-pulse rounded-md bg-neutral-100"
+            class="h-14 animate-pulse rounded-md bg-slate-100 dark:bg-slate-800"
           />
         </div>
 
         <ul v-else class="mt-4 space-y-3">
           <li v-for="item in cart.items" :key="item.id" class="flex justify-between gap-3 text-sm">
             <div class="min-w-0">
-              <p class="truncate font-medium text-neutral-950">
+              <p class="truncate font-medium text-slate-950 dark:text-slate-100">
                 {{ item.product_name || `Variant #${item.product_variant_id}` }}
               </p>
-              <p class="text-neutral-500">Qty {{ item.quantity }}</p>
+              <p class="text-slate-500 dark:text-slate-400">Qty {{ item.quantity }}</p>
             </div>
-            <p class="font-semibold text-neutral-950">${{ Number(item.line_total).toFixed(2) }}</p>
+            <p class="font-semibold text-slate-950 dark:text-slate-100">
+              ${{ Number(item.line_total).toFixed(2) }}
+            </p>
           </li>
         </ul>
 
-        <div class="mt-5 space-y-2 border-t border-neutral-200 pt-4 text-sm">
+        <div class="mt-5 space-y-2 border-t border-slate-200 pt-4 text-sm dark:border-slate-800">
           <div class="flex justify-between">
-            <span class="text-neutral-500">Subtotal</span>
-            <span class="font-medium text-neutral-950">${{ subtotal }}</span>
+            <span class="text-slate-500 dark:text-slate-400">Subtotal</span>
+            <span class="font-medium text-slate-950 dark:text-slate-100">${{ subtotal }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-neutral-500">Shipping</span>
-            <span class="font-medium text-neutral-950">${{ shippingEstimate.toFixed(2) }}</span>
+            <span class="text-slate-500 dark:text-slate-400">Shipping</span>
+            <span class="font-medium text-slate-950 dark:text-slate-100">
+              ${{ shippingEstimate.toFixed(2) }}
+            </span>
           </div>
           <div
-            class="flex justify-between border-t border-neutral-200 pt-3 text-base font-bold text-neutral-950"
+            class="flex justify-between border-t border-slate-200 pt-3 text-base font-bold text-slate-950 dark:border-slate-800 dark:text-white"
           >
             <span>Total</span>
             <span>${{ total }}</span>

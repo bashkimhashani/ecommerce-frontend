@@ -210,16 +210,22 @@ function handleWishlistToggle({ product }) {
   wishlistStore.toggle(product);
 }
 
+function handleVendorProductSaved() {
+  fetchProducts(productListUrl());
+}
+
 onMounted(() => {
   syncFiltersToUrl(activeFilters.value, true);
   window.addEventListener("popstate", applyFiltersFromUrl);
   window.addEventListener("catalog-search-change", handleSearchChange);
+  window.addEventListener("vendor-product:saved", handleVendorProductSaved);
   fetchProducts(productListUrl());
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("popstate", applyFiltersFromUrl);
   window.removeEventListener("catalog-search-change", handleSearchChange);
+  window.removeEventListener("vendor-product:saved", handleVendorProductSaved);
 });
 
 watch(

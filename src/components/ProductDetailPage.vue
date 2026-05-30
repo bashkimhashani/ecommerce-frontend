@@ -208,7 +208,7 @@ watch(() => props.slug, loadProduct);
             v-if="selectedImage"
             :src="selectedImage.src"
             :alt="selectedImage.alt_text || product.name"
-            class="aspect-[4/3] w-full object-cover"
+            class="aspect-[4/3] w-full bg-white object-contain p-4 dark:bg-slate-900"
           />
           <div
             v-else
@@ -234,7 +234,7 @@ watch(() => props.slug, loadProduct);
             <img
               :src="image.thumbnail || image.src"
               :alt="image.alt_text || product.name"
-              class="aspect-square w-full object-cover"
+              class="aspect-square w-full object-contain p-1"
             />
           </button>
         </div>
