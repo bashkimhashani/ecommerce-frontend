@@ -177,7 +177,7 @@ watch(() => props.slug, loadProduct);
 
 <template>
   <section
-    class="min-w-0 flex-1 bg-transparent px-5 py-5 text-slate-950 dark:text-slate-100 sm:px-6"
+    class="min-h-0 min-w-0 flex-1 overflow-y-auto bg-transparent px-5 py-5 text-slate-950 dark:text-slate-100 sm:px-6"
   >
     <button
       type="button"
