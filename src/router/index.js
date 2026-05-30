@@ -56,6 +56,12 @@ const routes = [
     },
   },
   {
+    path: "/wishlist",
+    name: "wishlist",
+    component: RouteShell,
+    meta: { activeView: "wishlist" },
+  },
+  {
     path: "/login",
     name: "login",
     component: RouteShell,
