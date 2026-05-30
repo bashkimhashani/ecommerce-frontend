@@ -65,10 +65,10 @@ describe("router navigation guards", () => {
     expect(router.currentRoute.value.query.redirect).toBe("/orders");
   });
 
-  it("allows shoppers to open the public wishlist route", async () => {
+  it("redirects unauthenticated shoppers from the protected wishlist route", async () => {
     await router.push("/wishlist");
 
-    expect(router.currentRoute.value.name).toBe("wishlist");
-    expect(router.currentRoute.value.meta.activeView).toBe("wishlist");
+    expect(router.currentRoute.value.name).toBe("login");
+    expect(router.currentRoute.value.query.redirect).toBe("/wishlist");
   });
 });
