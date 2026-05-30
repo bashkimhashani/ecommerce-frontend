@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { useAuthStore } from "../stores/authStore";
 import { useWishlistStore } from "../stores/wishlistStore";
 
 import FilterPanel from "./FilterPanel.vue";
@@ -35,10 +36,12 @@ const nextPageUrl = ref(null);
 const isLoading = ref(false);
 const errorMessage = ref("");
 const currentPage = ref(1);
+const authStore = useAuthStore();
 const wishlistStore = useWishlistStore();
 let isApplyingUrlState = false;
 
 const hasProducts = computed(() => products.value.length > 0);
+const isVendorCatalog = computed(() => authStore.role === "vendor_admin");
 const pageCount = computed(() => Math.max(1, Math.ceil(products.value.length / pageSize)));
 const visibleProducts = computed(() => {
   const startIndex = (currentPage.value - 1) * pageSize;
@@ -67,6 +70,9 @@ function filtersToSearchParams(filters) {
   }
   if (Number(filters.maxPrice) < defaultFilters.maxPrice) {
     params.set("max_price", filters.maxPrice);
+  }
+  if (isVendorCatalog.value) {
+    params.set("mine", "1");
   }
 
   return params;
@@ -140,7 +146,10 @@ async function fetchProducts(url, append = false) {
   isLoading.value = true;
 
   try {
-    const response = await fetch(resolveApiUrl(url));
+    const headers = authStore.accessToken
+      ? { Authorization: `Bearer ${authStore.accessToken}` }
+      : {};
+    const response = await fetch(resolveApiUrl(url), { headers });
 
     if (!response.ok) {
       throw new Error("Could not load products.");
@@ -280,7 +289,11 @@ watch(
         >
           <p class="text-sm font-semibold text-slate-700 dark:text-slate-100">No products found.</p>
           <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Products will appear here after they are published.
+            {{
+              isVendorCatalog
+                ? "You can add more products from the vendor dashboard, or log in as a user to view the full catalogue."
+                : "Products will appear here after they are published."
+            }}
           </p>
         </div>
 
@@ -295,6 +308,7 @@ watch(
             v-for="product in visibleProducts"
             :key="product.id"
             :product="product"
+            :show-wishlist="!isVendorCatalog"
             @view="emit('view-product', $event)"
             @toggle-wishlist="handleWishlistToggle"
           />

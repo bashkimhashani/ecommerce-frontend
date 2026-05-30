@@ -6,6 +6,10 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  showWishlist: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 const emit = defineEmits(["view", "toggle-wishlist"]);
@@ -78,6 +82,7 @@ watch(
       </div>
 
       <button
+        v-if="showWishlist"
         type="button"
         class="absolute left-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/70 bg-white/90 text-slate-600 shadow-sm backdrop-blur transition hover:scale-105 hover:bg-white hover:text-rose-600 dark:border-slate-600 dark:bg-slate-950/90 dark:text-slate-200 dark:hover:bg-slate-900 dark:hover:text-rose-300"
         :class="{ 'text-rose-600': isWishlisted }"

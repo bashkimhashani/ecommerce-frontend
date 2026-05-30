@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/authStore";
 import ThemeToggle from "./ThemeToggle.vue";
 
@@ -7,6 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
 
 const authStore = useAuthStore();
+const router = useRouter();
 
 const form = reactive({
   firstName: "",
@@ -79,6 +81,11 @@ const saveIndicatorClass = computed(() => {
 
 function authorizationHeaders() {
   return authStore.accessToken ? { Authorization: `Bearer ${authStore.accessToken}` } : {};
+}
+
+function logout() {
+  authStore.clearSession();
+  router.push({ name: "login" });
 }
 
 function setFormFromUser(user) {
@@ -352,6 +359,14 @@ onBeforeUnmount(clearAvatarPreview);
                 <ThemeToggle />
               </div>
             </div>
+
+            <button
+              type="button"
+              class="inline-flex h-11 w-full items-center justify-center rounded-md border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-950/70"
+              @click="logout"
+            >
+              Logout
+            </button>
           </div>
         </aside>
 

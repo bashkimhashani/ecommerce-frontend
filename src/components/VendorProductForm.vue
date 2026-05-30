@@ -1,78 +1,73 @@
 <script setup>
 import { computed, ref, watch } from "vue";
+import { useAuthStore } from "../stores/authStore";
 
 import VendorProductImageGallery from "./VendorProductImageGallery.vue";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-const mode = ref("create");
-const authToken = ref("");
-const targetSlug = ref("macbook-air-13-m3");
-const product = ref({
-  name: "MacBook Air 13 M3",
-  slug: "macbook-air-13-m3",
-  sku: "MBA13-M3-256",
-  brand: 1,
-  category: 1,
+const authStore = useAuthStore();
+
+const blankProduct = {
+  name: "",
+  slug: "",
+  sku: "",
+  brandName: "",
+  categoryName: "General",
   status: "draft",
-  base_price: "1099.00",
-});
+  base_price: "",
+  stockQuantity: 0,
+  color: "",
+  storage: "",
+  ram: "",
+};
+
+const mode = ref("create");
+const targetSlug = ref("");
+const product = ref({ ...blankProduct });
 const specsJson = ref(
   JSON.stringify(
     {
-      cpu: "Apple M3",
-      ram: "16GB",
-      storage: "512GB SSD",
-      display: "13.6 inch Liquid Retina",
+      cpu: "",
+      ram: "",
+      storage: "",
+      display: "",
     },
     null,
     2
   )
 );
-const images = ref([
-  {
-    id: 1,
-    image:
-      "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80",
-    thumbnail:
-      "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=300&q=80",
-    alt_text: "MacBook laptop open on desk",
-    sort_order: 0,
-    is_primary: true,
-  },
-  {
-    id: 2,
-    image:
-      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=800&q=80",
-    thumbnail:
-      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=300&q=80",
-    alt_text: "Laptop keyboard and screen",
-    sort_order: 1,
-    is_primary: false,
-  },
-  {
-    id: 3,
-    image:
-      "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=800&q=80",
-    thumbnail:
-      "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=300&q=80",
-    alt_text: "Laptop with accessories",
-    sort_order: 2,
-    is_primary: false,
-  },
-]);
+const images = ref([]);
 const saveState = ref("idle");
 const responseMessage = ref("");
 const shouldShowPayload = ref(false);
 
 const endpointUrl = computed(() => {
   if (mode.value === "update") {
-    return `${apiBaseUrl}/api/v1/catalog/products/${targetSlug.value}/`;
+    return `${apiBaseUrl}/api/v1/catalog/products/${targetSlug.value || product.value.slug}/`;
   }
 
   return `${apiBaseUrl}/api/v1/catalog/products/`;
 });
 
 const requestMethod = computed(() => (mode.value === "update" ? "PUT" : "POST"));
+const primaryImage = computed(() => {
+  return images.value.find((image) => image.is_primary) || images.value[0] || null;
+});
+const previewImage = computed(() => {
+  return primaryImage.value?.previewUrl || primaryImage.value?.image || primaryImage.value?.thumbnail || "";
+});
+const previewPrice = computed(() => {
+  const price = Number(product.value.base_price || 0);
+  return price
+    ? new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      }).format(price)
+    : "$0.00";
+});
+const previewVendor = computed(() => {
+  return product.value.brandName || authStore.user?.tenant_name || authStore.user?.tenant || "Vendor";
+});
 
 const parsedSpecs = computed(() => {
   try {
@@ -88,51 +83,134 @@ const parsedSpecs = computed(() => {
   }
 });
 
+const specRows = computed(() => {
+  return Object.entries(parsedSpecs.value.value || {}).filter(([, value]) => String(value).trim());
+});
+
 const productPayload = computed(() => ({
   name: product.value.name.trim(),
   slug: product.value.slug.trim(),
   sku: product.value.sku.trim(),
-  brand: Number(product.value.brand),
-  category: Number(product.value.category),
+  brand_name: product.value.brandName.trim(),
+  category_name: product.value.categoryName.trim(),
   status: product.value.status,
   base_price: product.value.base_price,
+  stock_quantity: Number(product.value.stockQuantity || 0),
+  color: product.value.color.trim(),
+  storage: product.value.storage.trim(),
+  ram: product.value.ram.trim(),
   tech_specs: parsedSpecs.value.value,
 }));
 
 const reorderPayload = computed(() => ({
-  images: images.value.map((image) => ({
-    id: image.id,
-    sort_order: image.sort_order,
-    alt_text: image.alt_text,
-    is_primary: image.is_primary,
-  })),
+  images: images.value
+    .filter((image) => !image.file)
+    .map((image) => ({
+      id: image.id,
+      sort_order: image.sort_order,
+      alt_text: image.alt_text,
+      is_primary: image.is_primary,
+    })),
 }));
 
+const localImages = computed(() => images.value.filter((image) => image.file));
 const hasValidProductPayload = computed(() => {
   return Boolean(
-    productPayload.value.name &&
-    productPayload.value.slug &&
-    productPayload.value.sku &&
-    productPayload.value.brand &&
-    productPayload.value.category &&
-    productPayload.value.base_price &&
-    parsedSpecs.value.value
+      productPayload.value.name &&
+      productPayload.value.slug &&
+      productPayload.value.sku &&
+      productPayload.value.category_name &&
+      productPayload.value.base_price &&
+      parsedSpecs.value.value
   );
 });
 
-function formatSpecs() {
-  if (!parsedSpecs.value.value) {
-    return;
-  }
+function authHeaders(contentType = "application/json") {
+  return {
+    ...(contentType ? { "Content-Type": contentType } : {}),
+    ...(authStore.accessToken ? { Authorization: `Bearer ${authStore.accessToken}` } : {}),
+  };
+}
 
+function slugify(value) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function syncSlugFromName() {
+  if (!product.value.slug.trim() || mode.value === "create") {
+    product.value.slug = slugify(product.value.name);
+  }
+}
+
+function formatSpecs() {
+  if (!parsedSpecs.value.value) return;
   specsJson.value = JSON.stringify(parsedSpecs.value.value, null, 2);
 }
 
+function resetForm() {
+  product.value = { ...blankProduct };
+  targetSlug.value = "";
+  images.value = [];
+  specsJson.value = JSON.stringify(
+    {
+      cpu: "",
+      ram: "",
+      storage: "",
+      display: "",
+    },
+    null,
+    2
+  );
+  responseMessage.value = "";
+  saveState.value = "idle";
+}
+
+function parseSaveError(payload) {
+  if (payload?.detail) return payload.detail;
+
+  const firstField = Object.keys(payload || {})[0];
+  const firstError = firstField ? payload[firstField] : "";
+  if (Array.isArray(firstError)) return firstError[0];
+  if (typeof firstError === "string") return firstError;
+
+  return "Could not save product.";
+}
+
+async function uploadLocalImages(slug) {
+  if (!localImages.value.length) return;
+
+  await Promise.all(
+    localImages.value.map(async (image, index) => {
+      const formData = new FormData();
+      formData.append("image", image.file);
+      formData.append("alt_text", image.alt_text || product.value.name || "Product image");
+      formData.append("sort_order", String(index));
+      formData.append("is_primary", String(Boolean(image.is_primary || index === 0)));
+
+      const response = await fetch(`${apiBaseUrl}/api/v1/catalog/products/${slug}/images/`, {
+        method: "POST",
+        headers: authHeaders(null),
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(parseSaveError(payload));
+      }
+    })
+  );
+}
+
 async function saveProduct() {
-  shouldShowPayload.value = true;
+  shouldShowPayload.value = false;
 
   if (!hasValidProductPayload.value) {
-    responseMessage.value = "Fix the product fields before saving.";
+    responseMessage.value = "Complete the required product details first.";
+    saveState.value = "error";
     return;
   }
 
@@ -142,23 +220,22 @@ async function saveProduct() {
   try {
     const response = await fetch(endpointUrl.value, {
       method: requestMethod.value,
-      headers: {
-        "Content-Type": "application/json",
-        ...(authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}),
-      },
+      headers: authHeaders(),
       body: JSON.stringify(productPayload.value),
     });
+    const payload = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      const errorPayload = await response.json().catch(() => ({}));
-      throw new Error(JSON.stringify(errorPayload, null, 2) || "Could not save product.");
+      throw new Error(parseSaveError(payload));
     }
 
-    const savedProduct = await response.json();
-    product.value.slug = savedProduct.slug;
-    targetSlug.value = savedProduct.slug;
-    product.value.status = savedProduct.status;
-    responseMessage.value = "Product saved.";
+    await uploadLocalImages(payload.slug);
+    product.value.slug = payload.slug;
+    targetSlug.value = payload.slug;
+    product.value.status = payload.status;
+    responseMessage.value = localImages.value.length
+      ? "Product and images saved."
+      : "Product saved.";
     saveState.value = "saved";
   } catch (error) {
     responseMessage.value = error.message || "Could not save product.";
@@ -174,235 +251,414 @@ watch(mode, () => {
 </script>
 
 <template>
-  <section class="min-w-0 flex-1 px-6 py-5">
-    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
-      <div>
-        <h1 class="text-xl font-semibold text-slate-950">Product Management</h1>
-        <p class="mt-1 text-sm text-slate-500">
-          Create and update catalog products for the current tenant.
-        </p>
-      </div>
+  <section class="min-w-0 flex-1 px-4 py-4 sm:px-5">
+    <div
+      class="rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-950/5 dark:border-slate-800 dark:bg-slate-950"
+    >
+      <div
+        class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-slate-800"
+      >
+        <div>
+          <p class="text-xs font-black uppercase tracking-wide text-cyan-700 dark:text-cyan-300">
+            Vendor listing
+          </p>
+          <h1 class="mt-1 text-xl font-black text-slate-950 dark:text-white">
+            Product composer
+          </h1>
+        </div>
 
-      <div class="inline-flex rounded-md border border-slate-200 bg-slate-50 p-1">
-        <button
-          type="button"
-          class="rounded px-3 py-1.5 text-sm font-semibold"
-          :class="
-            mode === 'create'
-              ? 'bg-white text-slate-950 shadow-sm'
-              : 'text-slate-500 hover:text-slate-800'
-          "
-          @click="mode = 'create'"
-        >
-          Create
-        </button>
-        <button
-          type="button"
-          class="rounded px-3 py-1.5 text-sm font-semibold"
-          :class="
-            mode === 'update'
-              ? 'bg-white text-slate-950 shadow-sm'
-              : 'text-slate-500 hover:text-slate-800'
-          "
-          @click="mode = 'update'"
-        >
-          Update
-        </button>
-      </div>
-    </div>
-
-    <form class="grid gap-5 py-5 xl:grid-cols-[minmax(0,1fr)_360px]" @submit.prevent="saveProduct">
-      <div class="space-y-5">
-        <section class="rounded-md border border-slate-200 bg-white">
-          <div class="border-b border-slate-200 px-4 py-3">
-            <h2 class="text-sm font-semibold text-slate-950">Product fields</h2>
-          </div>
-
-          <div class="grid gap-4 p-4 md:grid-cols-2">
-            <label class="block">
-              <span class="text-xs font-medium text-slate-600">Name</span>
-              <input
-                v-model="product.name"
-                type="text"
-                class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500"
-              />
-            </label>
-
-            <label class="block">
-              <span class="text-xs font-medium text-slate-600">Slug</span>
-              <input
-                v-model="product.slug"
-                type="text"
-                class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500"
-              />
-            </label>
-
-            <label class="block">
-              <span class="text-xs font-medium text-slate-600">SKU</span>
-              <input
-                v-model="product.sku"
-                type="text"
-                class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500"
-              />
-            </label>
-
-            <label class="block">
-              <span class="text-xs font-medium text-slate-600">Base price</span>
-              <input
-                v-model="product.base_price"
-                type="number"
-                min="0"
-                step="0.01"
-                class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500"
-              />
-            </label>
-
-            <label class="block">
-              <span class="text-xs font-medium text-slate-600">Brand ID</span>
-              <input
-                v-model.number="product.brand"
-                type="number"
-                min="1"
-                class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500"
-              />
-            </label>
-
-            <label class="block">
-              <span class="text-xs font-medium text-slate-600">Category ID</span>
-              <input
-                v-model.number="product.category"
-                type="number"
-                min="1"
-                class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500"
-              />
-            </label>
-
-            <label class="block md:col-span-2">
-              <span class="text-xs font-medium text-slate-600">Status</span>
-              <select
-                v-model="product.status"
-                class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500"
-              >
-                <option value="draft">Draft</option>
-                <option value="active">Active</option>
-                <option value="archived">Archived</option>
-              </select>
-            </label>
-          </div>
-        </section>
-
-        <section class="rounded-md border border-slate-200 bg-white">
-          <div
-            class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3"
+        <div class="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-slate-800 dark:bg-slate-900">
+          <button
+            type="button"
+            class="rounded-md px-3 py-2 text-sm font-black transition"
+            :class="
+              mode === 'create'
+                ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-100 dark:text-slate-950'
+                : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'
+            "
+            @click="mode = 'create'"
           >
-            <h2 class="text-sm font-semibold text-slate-950">Tech specs JSON</h2>
-            <button
-              type="button"
-              class="rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-              :disabled="Boolean(parsedSpecs.error)"
-              @click="formatSpecs"
-            >
-              Format JSON
-            </button>
-          </div>
-
-          <div class="p-4">
-            <textarea
-              v-model="specsJson"
-              spellcheck="false"
-              class="min-h-72 w-full resize-y rounded-md border bg-slate-950 p-4 font-mono text-sm leading-6 text-slate-100 outline-none focus:border-slate-500"
-              :class="parsedSpecs.error ? 'border-red-300' : 'border-slate-800'"
-            ></textarea>
-            <p
-              v-if="parsedSpecs.error"
-              class="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"
-            >
-              {{ parsedSpecs.error }}
-            </p>
-          </div>
-        </section>
-
-        <VendorProductImageGallery v-model="images" />
+            Create
+          </button>
+          <button
+            type="button"
+            class="rounded-md px-3 py-2 text-sm font-black transition"
+            :class="
+              mode === 'update'
+                ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-100 dark:text-slate-950'
+                : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'
+            "
+            @click="mode = 'update'"
+          >
+            Update
+          </button>
+        </div>
       </div>
 
-      <aside class="space-y-5">
-        <section class="rounded-md border border-slate-200 bg-white p-4">
-          <h2 class="text-sm font-semibold text-slate-950">Save product</h2>
-          <dl class="mt-4 space-y-3 text-sm">
-            <div v-if="mode === 'update'" class="space-y-1">
-              <dt class="text-slate-500">Current slug</dt>
-              <dd>
+      <form
+        class="grid gap-5 p-5 xl:grid-cols-[minmax(0,1fr)_360px]"
+        @submit.prevent="saveProduct"
+      >
+        <div class="space-y-5">
+          <section
+            class="rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60"
+          >
+            <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 class="text-sm font-black text-slate-950 dark:text-white">Listing details</h2>
+                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Required information for the catalog card and product page.
+                </p>
+              </div>
+              <button
+                type="button"
+                class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-600 transition hover:border-cyan-300 hover:text-slate-950 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:text-white"
+                @click="resetForm"
+              >
+                Clear
+              </button>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-2">
+              <label class="block md:col-span-2">
+                <span class="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Product name
+                </span>
+                <input
+                  v-model="product.name"
+                  type="text"
+                  placeholder="Apple MacBook Air 13 M3"
+                  class="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-600 dark:focus:ring-cyan-950/60"
+                  @blur="syncSlugFromName"
+                />
+              </label>
+
+              <label class="block">
+                <span class="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Slug
+                </span>
+                <input
+                  v-model="product.slug"
+                  type="text"
+                  placeholder="apple-macbook-air-13-m3"
+                  class="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-600 dark:focus:ring-cyan-950/60"
+                />
+              </label>
+
+              <label class="block">
+                <span class="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  SKU
+                </span>
+                <input
+                  v-model="product.sku"
+                  type="text"
+                  placeholder="MBA13-M3-256"
+                  class="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-600 dark:focus:ring-cyan-950/60"
+                />
+              </label>
+
+              <label class="block">
+                <span class="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Price
+                </span>
+                <input
+                  v-model="product.base_price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="1099.00"
+                  class="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-600 dark:focus:ring-cyan-950/60"
+                />
+              </label>
+
+              <label class="block">
+                <span class="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Status
+                </span>
+                <select
+                  v-model="product.status"
+                  class="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:ring-cyan-950/60"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="active">Active</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </label>
+
+              <label class="block">
+                <span class="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Brand
+                </span>
+                <input
+                  v-model="product.brandName"
+                  type="text"
+                  placeholder="Apple"
+                  class="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-600 dark:focus:ring-cyan-950/60"
+                />
+              </label>
+
+              <label class="block">
+                <span class="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Category
+                </span>
+                <input
+                  v-model="product.categoryName"
+                  type="text"
+                  placeholder="Laptops"
+                  class="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-600 dark:focus:ring-cyan-950/60"
+                />
+              </label>
+
+              <label class="block">
+                <span class="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Stock quantity
+                </span>
+                <input
+                  v-model.number="product.stockQuantity"
+                  type="number"
+                  min="0"
+                  placeholder="24"
+                  class="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-600 dark:focus:ring-cyan-950/60"
+                />
+              </label>
+
+              <label class="block">
+                <span class="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Color
+                </span>
+                <input
+                  v-model="product.color"
+                  type="text"
+                  placeholder="Space Gray"
+                  class="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-600 dark:focus:ring-cyan-950/60"
+                />
+              </label>
+
+              <label class="block">
+                <span class="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Storage
+                </span>
+                <input
+                  v-model="product.storage"
+                  type="text"
+                  placeholder="512GB SSD"
+                  class="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-600 dark:focus:ring-cyan-950/60"
+                />
+              </label>
+
+              <label class="block">
+                <span class="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  RAM
+                </span>
+                <input
+                  v-model="product.ram"
+                  type="text"
+                  placeholder="16GB"
+                  class="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-600 dark:focus:ring-cyan-950/60"
+                />
+              </label>
+
+              <label v-if="mode === 'update'" class="block md:col-span-2">
+                <span class="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Product to update
+                </span>
                 <input
                   v-model="targetSlug"
                   type="text"
-                  class="w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                  placeholder="existing-product-slug"
+                  class="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-600 dark:focus:ring-cyan-950/60"
                 />
-              </dd>
+              </label>
             </div>
-            <div class="flex justify-between gap-3">
-              <dt class="text-slate-500">Method</dt>
-              <dd class="font-semibold text-slate-950">{{ requestMethod }}</dd>
-            </div>
-            <div class="space-y-1">
-              <dt class="text-slate-500">Endpoint</dt>
-              <dd class="break-all font-mono text-xs text-slate-700">{{ endpointUrl }}</dd>
-            </div>
-            <div class="space-y-1">
-              <dt class="text-slate-500">Bearer token</dt>
-              <dd>
-                <input
-                  v-model="authToken"
-                  type="password"
-                  class="w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500"
-                />
-              </dd>
-            </div>
-          </dl>
+          </section>
 
-          <button
-            type="submit"
-            class="mt-4 w-full rounded-md bg-slate-950 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-            :disabled="saveState === 'saving' || !hasValidProductPayload"
+          <section
+            class="rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60"
           >
-            {{ saveState === "saving" ? "Saving..." : "Save product" }}
-          </button>
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="text-sm font-black text-slate-950 dark:text-white">Technical specs</h2>
+                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Keep it as JSON so the product page can render structured details.
+                </p>
+              </div>
+              <button
+                type="button"
+                class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-600 transition hover:border-cyan-300 hover:text-slate-950 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:text-white"
+                :disabled="Boolean(parsedSpecs.error)"
+                @click="formatSpecs"
+              >
+                Format
+              </button>
+            </div>
 
-          <p
-            v-if="responseMessage"
-            class="mt-3 rounded-md px-3 py-2 text-sm"
-            :class="
-              saveState === 'error' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
-            "
+            <textarea
+              v-model="specsJson"
+              spellcheck="false"
+              class="min-h-48 w-full resize-y rounded-xl border border-slate-800 bg-slate-950 p-4 font-mono text-sm leading-6 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-950/60"
+              :class="parsedSpecs.error ? 'border-red-400' : 'border-slate-800'"
+            ></textarea>
+            <p
+              v-if="parsedSpecs.error"
+              class="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"
+            >
+              {{ parsedSpecs.error }}
+            </p>
+          </section>
+
+          <VendorProductImageGallery v-model="images" />
+        </div>
+
+        <aside class="space-y-5 xl:sticky xl:top-4 xl:self-start">
+          <section
+            class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
           >
-            {{ responseMessage }}
-          </p>
-        </section>
+            <div class="aspect-[4/3] bg-slate-100 dark:bg-slate-950">
+              <img
+                v-if="previewImage"
+                :src="previewImage"
+                :alt="product.name || 'Product preview'"
+                class="h-full w-full object-contain p-5"
+              />
+              <div v-else class="flex h-full items-center justify-center px-8 text-center">
+                <p class="text-sm font-semibold text-slate-400">
+                  Upload a primary product image to preview the listing.
+                </p>
+              </div>
+            </div>
+            <div class="space-y-3 p-4">
+              <div class="flex items-center justify-between gap-3">
+                <span
+                  class="rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-black text-cyan-700 dark:bg-cyan-950/50 dark:text-cyan-200"
+                >
+                  {{ product.status || "draft" }}
+                </span>
+                <span
+                  class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200"
+                >
+                  {{ Number(product.stockQuantity || 0) }} in stock
+                </span>
+                <span class="text-sm font-black text-slate-950 dark:text-white">
+                  {{ previewPrice }}
+                </span>
+              </div>
+              <div>
+                <h3 class="line-clamp-2 text-lg font-black text-slate-950 dark:text-white">
+                  {{ product.name || "Product name" }}
+                </h3>
+                <p class="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">
+                  {{ product.slug || "product-slug" }}
+                </p>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <span
+                    class="max-w-full truncate rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600 dark:bg-slate-950 dark:text-slate-300"
+                  >
+                    {{ product.categoryName || "General" }}
+                  </span>
+                  <span
+                    class="max-w-full truncate rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-black text-cyan-700 dark:bg-cyan-950/50 dark:text-cyan-200"
+                  >
+                    {{ previewVendor }}
+                  </span>
+                </div>
+              </div>
+              <dl class="grid grid-cols-3 gap-2 text-xs">
+                <div class="rounded-lg bg-slate-50 p-2 dark:bg-slate-950">
+                  <dt class="font-black uppercase text-slate-400">Color</dt>
+                  <dd class="mt-1 truncate font-semibold text-slate-700 dark:text-slate-200">
+                    {{ product.color || "-" }}
+                  </dd>
+                </div>
+                <div class="rounded-lg bg-slate-50 p-2 dark:bg-slate-950">
+                  <dt class="font-black uppercase text-slate-400">Storage</dt>
+                  <dd class="mt-1 truncate font-semibold text-slate-700 dark:text-slate-200">
+                    {{ product.storage || "-" }}
+                  </dd>
+                </div>
+                <div class="rounded-lg bg-slate-50 p-2 dark:bg-slate-950">
+                  <dt class="font-black uppercase text-slate-400">RAM</dt>
+                  <dd class="mt-1 truncate font-semibold text-slate-700 dark:text-slate-200">
+                    {{ product.ram || "-" }}
+                  </dd>
+                </div>
+              </dl>
+              <dl v-if="specRows.length" class="grid grid-cols-2 gap-2 text-xs">
+                <div
+                  v-for="[key, value] in specRows.slice(0, 4)"
+                  :key="key"
+                  class="rounded-lg bg-slate-50 p-2 dark:bg-slate-950"
+                >
+                  <dt class="font-black uppercase text-slate-400">{{ key }}</dt>
+                  <dd class="mt-1 truncate font-semibold text-slate-700 dark:text-slate-200">
+                    {{ value }}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </section>
 
-        <section class="rounded-md border border-slate-200 bg-slate-950 p-4 text-slate-100">
-          <div class="flex items-center justify-between gap-3">
-            <h2 class="text-sm font-semibold">Product payload</h2>
+          <section
+            class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+          >
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h2 class="text-sm font-black text-slate-950 dark:text-white">Publish controls</h2>
+                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  {{ requestMethod }} product request
+                </p>
+              </div>
+              <span
+                class="rounded-full px-2.5 py-1 text-xs font-black"
+                :class="
+                  authStore.accessToken
+                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200'
+                    : 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-200'
+                "
+              >
+                {{ authStore.accessToken ? "Signed in" : "No session" }}
+              </span>
+            </div>
+
+            <button
+              type="submit"
+              class="mt-4 flex h-12 w-full items-center justify-center rounded-lg bg-slate-950 px-4 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:-translate-y-0.5 hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:hover:translate-y-0 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-200"
+              :disabled="saveState === 'saving' || !hasValidProductPayload"
+            >
+              {{ saveState === "saving" ? "Saving..." : mode === "update" ? "Update listing" : "Create listing" }}
+            </button>
+
+            <p
+              v-if="responseMessage"
+              class="mt-3 rounded-lg border px-3 py-2 text-sm font-semibold"
+              :class="
+                saveState === 'error'
+                  ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200'
+                  : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200'
+              "
+            >
+              {{ responseMessage }}
+            </p>
+          </section>
+
+          <section
+            class="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+          >
             <button
               type="button"
-              class="rounded-md border border-white/20 px-2 py-1 text-xs font-semibold text-slate-200 hover:bg-white/10"
+              class="flex w-full items-center justify-between text-left text-sm font-black text-slate-950 dark:text-white"
               @click="shouldShowPayload = !shouldShowPayload"
             >
-              {{ shouldShowPayload ? "Hide" : "Show" }}
+              Developer payload
+              <span class="text-xs text-slate-500">{{ shouldShowPayload ? "Hide" : "Show" }}</span>
             </button>
-          </div>
-          <pre
-            v-if="shouldShowPayload"
-            class="mt-3 max-h-80 overflow-auto rounded-md bg-black/30 p-3 text-xs leading-5"
-            >{{ JSON.stringify(productPayload, null, 2) }}</pre
-          >
-        </section>
-
-        <section class="rounded-md border border-slate-200 bg-slate-950 p-4 text-slate-100">
-          <h2 class="text-sm font-semibold">Image reorder payload</h2>
-          <pre class="mt-3 max-h-64 overflow-auto rounded-md bg-black/30 p-3 text-xs leading-5">{{
-            JSON.stringify(reorderPayload, null, 2)
-          }}</pre>
-        </section>
-      </aside>
-    </form>
+            <pre
+              v-if="shouldShowPayload"
+              class="mt-3 max-h-64 overflow-auto rounded-lg bg-slate-950 p-3 text-xs leading-5 text-slate-100"
+              >{{ JSON.stringify({ product: productPayload, reorder: reorderPayload }, null, 2) }}</pre
+            >
+          </section>
+        </aside>
+      </form>
+    </div>
   </section>
 </template>
