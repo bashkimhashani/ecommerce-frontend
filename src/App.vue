@@ -25,6 +25,7 @@ import { useAuthStore } from "./stores/authStore";
 import { useThemeStore } from "./stores/themeStore";
 import { useWishlistStore } from "./stores/wishlistStore";
 import { shouldShowAppChrome } from "./utils/appChrome";
+import { resolveCheckoutAccess } from "./utils/checkoutAccess";
 
 const route = useRoute();
 const router = useRouter();
@@ -52,6 +53,18 @@ const resetPasswordUid = computed(() => String(route.query.uid || ""));
 const resetPasswordToken = computed(() => String(route.query.token || ""));
 
 function openCheckout() {
+  const access = resolveCheckoutAccess({
+    isAuthenticated: authStore.isAuthenticated,
+    redirectPath: route.fullPath,
+    role: authStore.role,
+  });
+
+  if (!access.allowed) {
+    isCheckoutOpen.value = false;
+    router.push(access.route);
+    return;
+  }
+
   isCheckoutOpen.value = true;
 }
 
