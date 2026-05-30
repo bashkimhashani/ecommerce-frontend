@@ -39,6 +39,10 @@ const activeView = computed(() => {
   if (route.query.uid && route.query.token) return "reset-password";
   return route.meta.activeView || "catalog";
 });
+const authViews = ["login", "register", "tenant-register", "forgot-password", "reset-password"];
+const showAppChrome = computed(
+  () => authStore.isAuthenticated && !authViews.includes(activeView.value)
+);
 
 const selectedOrderNumber = computed(() => String(route.params.orderNumber || ""));
 const selectedProductSlug = computed(() => String(route.params.productSlug || ""));
@@ -157,9 +161,11 @@ onBeforeUnmount(() => {
 
 <template>
   <div
-    class="flex h-screen flex-col overflow-hidden bg-transparent text-slate-950 transition-colors duration-300 dark:text-slate-100"
+    class="flex flex-col bg-transparent text-slate-950 transition-colors duration-300 dark:text-slate-100"
+    :class="showAppChrome ? 'h-screen overflow-hidden' : 'min-h-screen overflow-y-auto'"
   >
     <Header
+      v-if="showAppChrome"
       :active-view="
         activeView === 'order-detail'
           ? 'orders'
@@ -245,8 +251,8 @@ onBeforeUnmount(() => {
       </div>
     </Transition>
 
-    <ShopingCart v-if="!isCheckoutOpen" @checkout="openCheckout" />
-    <ChatWidget @view-product="openProductFromChat" />
+    <ShopingCart v-if="showAppChrome && !isCheckoutOpen" @checkout="openCheckout" />
+    <ChatWidget v-if="showAppChrome" @view-product="openProductFromChat" />
     <AppFooter class="hidden" />
     <button
       v-if="isScrollTopVisible"

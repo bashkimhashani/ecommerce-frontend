@@ -143,18 +143,22 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="rounded-md border border-slate-200 bg-white">
+  <section
+    class="rounded-xl border border-slate-200 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-900/60"
+  >
     <div
-      class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3"
+      class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-800"
     >
       <div>
-        <h2 class="text-sm font-semibold text-slate-950">Product images</h2>
-        <p class="mt-1 text-xs text-slate-500">Drag images to reorder them.</p>
+        <h2 class="text-sm font-black text-slate-950 dark:text-white">Product images</h2>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          Upload photos, choose a primary image, and drag to reorder.
+        </p>
       </div>
 
       <button
         type="button"
-        class="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700"
+        class="rounded-lg bg-slate-950 px-3 py-2 text-sm font-black text-white transition hover:bg-cyan-700 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-200"
         @click="openFilePicker"
       >
         Upload images
@@ -170,9 +174,11 @@ onBeforeUnmount(() => {
       />
     </div>
 
-    <div v-if="!sortedImages.length" class="px-4 py-10 text-center">
-      <p class="text-sm font-medium text-slate-700">No images uploaded yet.</p>
-      <p class="mt-1 text-sm text-slate-500">Add product photos before publishing.</p>
+    <div v-if="!sortedImages.length" class="px-4 py-12 text-center">
+      <p class="text-sm font-black text-slate-700 dark:text-slate-100">No images uploaded yet.</p>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        Add product photos before publishing.
+      </p>
     </div>
 
     <ul v-else class="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -180,18 +186,18 @@ onBeforeUnmount(() => {
         v-for="image in sortedImages"
         :key="image.id"
         draggable="true"
-        class="rounded-md border border-slate-200 bg-slate-50 transition hover:border-slate-300"
-        :class="{ 'ring-2 ring-slate-900': draggedImageId === image.id }"
+        class="overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-cyan-300 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-cyan-500/60"
+        :class="{ 'ring-2 ring-cyan-400': draggedImageId === image.id }"
         @dragstart="draggedImageId = image.id"
         @dragend="draggedImageId = null"
         @dragover.prevent
         @drop.prevent="moveImage(image.id)"
       >
-        <div class="aspect-square overflow-hidden rounded-t-md bg-slate-100">
+        <div class="aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-900">
           <img
             :src="imageSource(image)"
             :alt="image.alt_text || 'Product image'"
-            class="h-full w-full object-cover"
+            class="h-full w-full object-contain p-3"
           />
         </div>
 
@@ -202,18 +208,20 @@ onBeforeUnmount(() => {
             </span>
             <span
               v-if="image.is_primary"
-              class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700"
+              class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-black text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200"
             >
               Primary
             </span>
           </div>
 
           <label class="block">
-            <span class="text-xs font-medium text-slate-600">Alt text</span>
+            <span class="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              Alt text
+            </span>
             <input
               :value="image.alt_text"
               type="text"
-              class="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-2 text-sm outline-none focus:border-slate-500"
+              class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm text-slate-950 outline-none focus:border-cyan-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               @input="updateAltText(image.id, $event.target.value)"
             />
           </label>
@@ -221,14 +229,14 @@ onBeforeUnmount(() => {
           <div class="flex items-center gap-2">
             <button
               type="button"
-              class="flex-1 rounded-md border border-slate-200 px-2 py-2 text-sm font-medium text-slate-700 hover:bg-white"
+              class="flex-1 rounded-lg border border-slate-200 px-2 py-2 text-sm font-black text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
               @click="setPrimary(image.id)"
             >
               Set primary
             </button>
             <button
               type="button"
-              class="rounded-md border border-red-200 px-2 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+              class="rounded-lg border border-red-200 px-2 py-2 text-sm font-black text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-200 dark:hover:bg-red-950/30"
               @click="removeImage(image.id)"
             >
               Remove
