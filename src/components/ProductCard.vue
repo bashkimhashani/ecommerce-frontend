@@ -31,6 +31,21 @@ const formattedPrice = computed(() => {
 const vendorName = computed(() => {
   return props.product.vendor?.store_name || props.product.vendor_name || "";
 });
+const productImage = computed(() => {
+  const firstImage = Array.isArray(props.product.images) ? props.product.images[0] : null;
+  return (
+    props.product.thumbnail ||
+    props.product.product_thumbnail ||
+    props.product.image_url ||
+    props.product.image ||
+    props.product.primary_image ||
+    firstImage?.thumbnail ||
+    firstImage?.medium ||
+    firstImage?.large ||
+    firstImage?.image ||
+    ""
+  );
+});
 
 function toggleWishlist() {
   isWishlisted.value = !isWishlisted.value;
@@ -66,10 +81,10 @@ watch(
       class="relative flex h-full min-h-0 items-center justify-center overflow-hidden bg-slate-50 p-3 dark:bg-slate-800"
     >
       <img
-        v-if="product.thumbnail"
-        :src="product.thumbnail"
+        v-if="productImage"
+        :src="productImage"
         :alt="product.name"
-        class="max-h-[88%] max-w-[92%] object-contain transition duration-300 group-hover:scale-[1.03]"
+        class="h-full w-full object-contain p-2 transition duration-300 group-hover:scale-[1.03]"
         loading="lazy"
       />
       <div

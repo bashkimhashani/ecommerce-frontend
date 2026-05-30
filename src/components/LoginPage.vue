@@ -35,15 +35,6 @@ function openVendorRegister() {
   router.push({ name: "tenant-register" });
 }
 
-function goBack() {
-  if (window.history.length > 1) {
-    router.back();
-    return;
-  }
-
-  router.push({ name: "register" });
-}
-
 async function submitLogin() {
   if (!canSubmit.value) {
     errorMessage.value = "Enter your email and password.";
@@ -118,15 +109,6 @@ async function submitLogin() {
 
       <div class="flex items-center px-6 py-8 sm:px-10">
         <form class="w-full" @submit.prevent="submitLogin">
-          <button
-            type="button"
-            class="mb-5 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-600 transition hover:border-cyan-300 hover:text-slate-950"
-            @click="goBack"
-          >
-            <span aria-hidden="true">&lt;</span>
-            Back
-          </button>
-
           <div class="mb-8 xl:hidden">
             <img class="h-12 w-auto" src="../assets/images/logo.png" alt="Vendora" />
           </div>

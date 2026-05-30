@@ -66,6 +66,15 @@ const routes = [
     },
   },
   {
+    path: "/refund-policy",
+    name: "refund-policy",
+    component: RouteShell,
+    meta: {
+      activeView: "refund-policy",
+      requiresAuth: true,
+    },
+  },
+  {
     path: "/login",
     name: "login",
     component: RouteShell,
