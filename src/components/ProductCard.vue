@@ -14,6 +14,7 @@ const props = defineProps({
 
 const emit = defineEmits(["view", "toggle-wishlist"]);
 const isWishlisted = ref(Boolean(props.product.is_wishlisted));
+const failedImage = ref(false);
 
 const formattedPrice = computed(() => {
   const numericPrice = Number(props.product.price);
@@ -46,8 +47,20 @@ const productImage = computed(() => {
     ""
   );
 });
+const isOutOfStock = computed(() => {
+  if (props.product.is_out_of_stock !== undefined) {
+    return Boolean(props.product.is_out_of_stock);
+  }
+
+  const stockValue = props.product.total_stock ?? props.product.stock_quantity;
+  return stockValue !== undefined && Number(stockValue || 0) <= 0;
+});
 
 function toggleWishlist() {
+  if (isOutOfStock.value) {
+    return;
+  }
+
   isWishlisted.value = !isWishlisted.value;
   emit("toggle-wishlist", {
     product: props.product,
@@ -56,6 +69,10 @@ function toggleWishlist() {
 }
 
 function viewProduct() {
+  if (isOutOfStock.value) {
+    return;
+  }
+
   emit("view", props.product.slug);
 }
 
@@ -65,14 +82,24 @@ watch(
     isWishlisted.value = Boolean(nextValue);
   }
 );
+
+watch(productImage, () => {
+  failedImage.value = false;
+});
 </script>
 
 <template>
   <article
-    class="group grid h-full min-h-0 cursor-pointer grid-cols-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-cyan-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/20 dark:hover:border-cyan-400/40 dark:focus:ring-cyan-300 dark:focus:ring-offset-slate-950"
+    class="group grid h-full min-h-0 grid-cols-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/20 dark:focus:ring-cyan-300 dark:focus:ring-offset-slate-950"
+    :class="
+      isOutOfStock
+        ? 'cursor-not-allowed opacity-45'
+        : 'cursor-pointer hover:border-cyan-300 hover:shadow-md dark:hover:border-cyan-400/40'
+    "
     role="button"
-    tabindex="0"
-    :aria-label="`View ${product.name}`"
+    :tabindex="isOutOfStock ? -1 : 0"
+    :aria-disabled="isOutOfStock"
+    :aria-label="isOutOfStock ? `${product.name} is out of stock` : `View ${product.name}`"
     @click="viewProduct"
     @keydown.enter.prevent="viewProduct"
     @keydown.space.prevent="viewProduct"
@@ -81,11 +108,12 @@ watch(
       class="relative flex h-full min-h-0 items-center justify-center overflow-hidden bg-slate-50 p-3 dark:bg-slate-800"
     >
       <img
-        v-if="productImage"
+        v-if="productImage && !failedImage"
         :src="productImage"
         :alt="product.name"
         class="h-full w-full object-contain p-2 transition duration-300 group-hover:scale-[1.03]"
         loading="lazy"
+        @error="failedImage = true"
       />
       <div
         v-else
@@ -101,6 +129,7 @@ watch(
         type="button"
         class="absolute left-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/70 bg-white/90 text-slate-600 shadow-sm backdrop-blur transition hover:scale-105 hover:bg-white hover:text-rose-600 dark:border-slate-600 dark:bg-slate-950/90 dark:text-slate-200 dark:hover:bg-slate-900 dark:hover:text-rose-300"
         :class="{ 'text-rose-600': isWishlisted }"
+        :disabled="isOutOfStock"
         :aria-pressed="isWishlisted"
         :aria-label="isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'"
         @click.stop="toggleWishlist"
@@ -142,6 +171,13 @@ watch(
         :title="vendorName"
       >
         {{ vendorName }}
+      </p>
+
+      <p
+        v-if="isOutOfStock"
+        class="mt-2 w-max rounded-lg border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs font-black text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+      >
+        Out of stock
       </p>
 
       <div class="mt-auto flex items-center justify-between gap-3 pt-2">

@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 
 import { useWishlistStore } from "../stores/wishlistStore";
 import ProductCard from "./ProductCard.vue";
@@ -7,6 +8,7 @@ import ProductCard from "./ProductCard.vue";
 const emit = defineEmits(["view-product"]);
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const wishlistStore = useWishlistStore();
+const router = useRouter();
 
 const wishlistProducts = computed(() =>
   wishlistStore.items.map((product) => ({
@@ -19,22 +21,23 @@ function handleWishlistToggle({ product }) {
   wishlistStore.remove(product.id);
 }
 
-function hasImage(product) {
-  return Boolean(
+function shouldRefreshProduct(product) {
+  const imageUrl =
     product.thumbnail ||
-      product.product_thumbnail ||
-      product.image_url ||
-      product.image ||
-      product.primary_image ||
-      product.images?.length
-  );
+    product.product_thumbnail ||
+    product.image_url ||
+    product.image ||
+    product.primary_image ||
+    "";
+
+  return Boolean(product.slug) && (!imageUrl || imageUrl.startsWith("/media/"));
 }
 
-async function hydrateMissingImages() {
-  const missingProducts = wishlistStore.items.filter((product) => product.slug && !hasImage(product));
+async function hydrateWishlistProducts() {
+  const productsToRefresh = wishlistStore.items.filter(shouldRefreshProduct);
 
   await Promise.all(
-    missingProducts.map(async (product) => {
+    productsToRefresh.map(async (product) => {
       try {
         const response = await fetch(`${apiBaseUrl}/api/v1/catalog/products/${product.slug}/`);
         const payload = await response.json().catch(() => ({}));
@@ -49,7 +52,16 @@ async function hydrateMissingImages() {
   );
 }
 
-onMounted(hydrateMissingImages);
+function goBack() {
+  if (window.history.length > 1) {
+    router.back();
+    return;
+  }
+
+  router.push({ name: "catalog" });
+}
+
+onMounted(hydrateWishlistProducts);
 </script>
 
 <template>
@@ -60,11 +72,22 @@ onMounted(hydrateMissingImages);
       <div
         class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-800"
       >
-        <div>
-          <h1 class="text-xl font-semibold text-slate-950 dark:text-white">Wishlist</h1>
-          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Products you saved for later.
-          </p>
+        <div class="flex min-w-0 items-center gap-3">
+          <button
+            type="button"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-lg font-bold text-slate-700 shadow-sm transition hover:-translate-x-0.5 hover:border-cyan-300 hover:text-cyan-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-cyan-500 dark:hover:text-cyan-200"
+            aria-label="Back"
+            title="Back"
+            @click="goBack"
+          >
+            ‹
+          </button>
+          <div class="min-w-0">
+            <h1 class="text-xl font-semibold text-slate-950 dark:text-white">Wishlist</h1>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              Products you saved for later.
+            </p>
+          </div>
         </div>
 
         <button

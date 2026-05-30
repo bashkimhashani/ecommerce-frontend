@@ -43,9 +43,14 @@ let isApplyingUrlState = false;
 const hasProducts = computed(() => products.value.length > 0);
 const isVendorCatalog = computed(() => authStore.role === "vendor_admin");
 const pageCount = computed(() => Math.max(1, Math.ceil(products.value.length / pageSize)));
+const sortedProducts = computed(() =>
+  [...products.value].sort((first, second) => {
+    return Number(isProductOutOfStock(first)) - Number(isProductOutOfStock(second));
+  })
+);
 const visibleProducts = computed(() => {
   const startIndex = (currentPage.value - 1) * pageSize;
-  return products.value.slice(startIndex, startIndex + pageSize).map((product) => ({
+  return sortedProducts.value.slice(startIndex, startIndex + pageSize).map((product) => ({
     ...product,
     is_wishlisted: wishlistStore.has(product.id),
   }));
@@ -74,6 +79,7 @@ function filtersToSearchParams(filters) {
   if (isVendorCatalog.value) {
     params.set("mine", "1");
   }
+  params.set("include_stock", "1");
 
   return params;
 }
@@ -85,6 +91,15 @@ function normalizePrice(value, fallback) {
   if (!Number.isFinite(numericValue)) return fallback;
 
   return Math.min(Math.max(numericValue, 0), defaultFilters.maxPrice);
+}
+
+function isProductOutOfStock(product) {
+  if (product.is_out_of_stock !== undefined) {
+    return Boolean(product.is_out_of_stock);
+  }
+
+  const stockValue = product.total_stock ?? product.stock_quantity;
+  return stockValue !== undefined && Number(stockValue || 0) <= 0;
 }
 
 function readFiltersFromUrl() {
@@ -111,7 +126,7 @@ function syncFiltersToUrl(filters, replace = false) {
   const params = new URLSearchParams(window.location.search);
   const filterParams = filtersToSearchParams(filters);
 
-  filterParamKeys.forEach((key) => params.delete(key));
+  [...filterParamKeys, "include_stock"].forEach((key) => params.delete(key));
   filterParams.forEach((value, key) => params.set(key, value));
 
   const queryString = params.toString();

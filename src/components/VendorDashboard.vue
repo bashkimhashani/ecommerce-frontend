@@ -25,6 +25,7 @@ const inventoryError = ref("");
 const orderSummaryError = ref("");
 const savedItemId = ref(null);
 const savingItemId = ref(null);
+const deletingSlug = ref("");
 const orderChartCanvas = ref(null);
 const activeTab = ref("products");
 let orderChart = null;
@@ -127,6 +128,10 @@ function itemSku(item) {
   return (
     item.sku || item.product_variant?.sku || item.variant?.sku || item.product?.sku || "Unassigned"
   );
+}
+
+function itemProductSlug(item) {
+  return item.product_slug || item.product?.slug || item.product_variant?.product_slug || "";
 }
 
 function itemLastUpdated(item) {
@@ -359,6 +364,38 @@ async function saveQuantity(item) {
     inventoryError.value = error.message || "Could not update quantity.";
   } finally {
     savingItemId.value = null;
+  }
+}
+
+async function deleteListing(item) {
+  const slug = itemProductSlug(item);
+  if (!slug || deletingSlug.value) {
+    return;
+  }
+
+  deletingSlug.value = slug;
+  inventoryError.value = "";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/v1/catalog/products/${slug}/`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorPayload = await response.json().catch(() => ({}));
+      throw new Error(errorPayload.detail || errorPayload.error || "Could not remove listing.");
+    }
+
+    inventoryItems.value = inventoryItems.value.filter((currentItem) => {
+      return itemProductSlug(currentItem) !== slug;
+    });
+    window.dispatchEvent(new CustomEvent("vendor-product:saved", { detail: { deleted: slug } }));
+    await refreshDashboard();
+  } catch (error) {
+    inventoryError.value = error.message || "Could not remove listing.";
+  } finally {
+    deletingSlug.value = "";
   }
 }
 
@@ -606,6 +643,7 @@ onBeforeUnmount(() => {
               <th class="px-4 py-3">Status</th>
               <th class="px-4 py-3">Updated</th>
               <th class="px-4 py-3 text-right">Action</th>
+              <th class="px-4 py-3 text-right">Remove</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -662,6 +700,18 @@ onBeforeUnmount(() => {
                   {{
                     savingItemId === item.id ? "Saving" : savedItemId === item.id ? "Saved" : "Save"
                   }}
+                </button>
+              </td>
+              <td class="px-4 py-3 text-right">
+                <button
+                  type="button"
+                  class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 bg-red-50 text-lg font-black leading-none text-red-700 transition hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-950/70"
+                  :disabled="deletingSlug === itemProductSlug(item)"
+                  :aria-label="`Remove ${itemProductName(item)}`"
+                  title="Remove listing"
+                  @click="deleteListing(item)"
+                >
+                  ×
                 </button>
               </td>
             </tr>
